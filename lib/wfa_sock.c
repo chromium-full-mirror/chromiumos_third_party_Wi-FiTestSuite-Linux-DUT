@@ -78,6 +78,7 @@ int wfaCreateTCPServSock(unsigned short port)
     if (wBIND(sock, (struct sockaddr *) &servAddr, sizeof(servAddr)) < 0)
     {
         DPRINT_ERR(WFA_ERR, "bind() failed");
+        wCLOSE(sock);
         return WFA_FAILURE;
     }
 
@@ -85,6 +86,7 @@ int wfaCreateTCPServSock(unsigned short port)
     if (wLISTEN(sock, MAXPENDING) < 0)
     {
         DPRINT_ERR(WFA_ERR, "listen() failed");
+        wCLOSE(sock);
         return WFA_FAILURE;
     }
 
@@ -338,6 +340,7 @@ int wfaGetifAddr(char *ifname, struct sockaddr_in *sa)
     }
     else
     {
+        wCLOSE(fd);
         return WFA_FAILURE;
     }
 

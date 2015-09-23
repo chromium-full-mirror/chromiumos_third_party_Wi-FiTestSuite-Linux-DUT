@@ -974,7 +974,7 @@ int wfaSendLongFile(int mySockfd, int streamid, BYTE *aRespBuf, int *aRespLen)
         packLen = theProf->pksize;
 
     /* allocate a buf */
-    packBuf = (char *)malloc(packLen+1);
+    packBuf = (char *)wMALLOC(packLen+1);
     wMEMSET(packBuf, 0, packLen);
 
     /* fill in the header */
@@ -1125,6 +1125,7 @@ int wfaSendLongFile(int mySockfd, int streamid, BYTE *aRespBuf, int *aRespLen)
         /* done here */
         *aRespLen = WFA_TLV_HDR_LEN + 4;
 
+        wFREE(packBuf);
         return DONE;
     }
 
