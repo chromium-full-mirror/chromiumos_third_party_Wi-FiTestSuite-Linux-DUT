@@ -3371,7 +3371,7 @@ int xcCmdProcStaSetPwrSave(char *pcmdStr, BYTE *aBuf, int *aLen)
         else if(strcasecmp(str, "mode") == 0)
         {
             str = strtok_r(NULL, ",", &pcmdStr);
-            strncpy(setps->mode, str, 64);
+            strncpy(setps->mode, str, 7);
         }
     }
 
@@ -7190,8 +7190,9 @@ int xcCmdProcStaManageService(char *pcmdStr, BYTE *aBuf, int *aLen)
 						 subtoken = strtok_r(str2," ",&saveptr2);
 						 if (subtoken == NULL)
 							 break;
-						 strncpy(staManageServCmd->MngCmds.MgtServ.fileList[index],str,16);
-						 staManageServCmd->MngCmds.MgtServ.fileList[index][16]='\0';
+                                                 const size_t fileSize = sizeof(staManageServCmd->MngCmds.MgtServ.fileList[index]) ;
+						 strncpy(staManageServCmd->MngCmds.MgtServ.fileList[index], str, fileSize);
+						 staManageServCmd->MngCmds.MgtServ.fileList[index][fileSize - 1]='\0';
 						 index++;
 					}
 					staManageServCmd->MngCmds.MgtServ.numModFiles= index;					
@@ -7209,7 +7210,7 @@ int xcCmdProcStaManageService(char *pcmdStr, BYTE *aBuf, int *aLen)
 						 if (subtoken == NULL)
 							 break;
 						 strncpy(staManageServCmd->MngCmds.MgtServ.modFileList[index],str,16);
-						 staManageServCmd->MngCmds.MgtServ.modFileList[index][16]='\0';
+						 staManageServCmd->MngCmds.MgtServ.modFileList[index][15]='\0';
 						 index++;
 					}
 					staManageServCmd->MngCmds.MgtServ.numModFiles= index;					
