@@ -359,50 +359,54 @@ int wfaTrafficAgentSendResp(BYTE *cmdBuf)
     else
     {
         sprintf(gRespStr, "status,COMPLETE,streamID,");
+        // Available size for gRespStr. Note that it reserves 2 bytes for
+        // ending "\r\n".
+        const size_t strSize = sizeof(gRespStr) - 3;
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %i", statResp[i].streamId);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
 
         printf("streamids %s\n", gRespStr);
 
-        strncat(gRespStr, ",txFrames,", 10);
+        strncat(gRespStr, ",txFrames,", strSize - strlen(gRespStr));
+        
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, "%i ", statResp[i].cmdru.stats.txFrames);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
 
-        strncat(gRespStr, ",rxFrames,", 10);
+        strncat(gRespStr, ",rxFrames,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, "%i ", statResp[i].cmdru.stats.rxFrames);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
 
-        strncat(gRespStr, ",txPayloadBytes,", 16);
+        strncat(gRespStr, ",txPayloadBytes,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, "%llu ", statResp[i].cmdru.stats.txPayloadBytes);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
 
-        strncat(gRespStr, ",rxPayloadBytes,", 16);
+        strncat(gRespStr, ",rxPayloadBytes,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %llu ", statResp[i].cmdru.stats.rxPayloadBytes);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
-        strncat(gRespStr, ",outOfSequenceFrames,", 20);
+        strncat(gRespStr, ",outOfSequenceFrames,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, "%i ", statResp[i].cmdru.stats.outOfSequenceFrames);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
 
         printf("jitter %lu\n", statResp[i].cmdru.stats.jitter);
-        strncat(gRespStr, "\r\n", 4);
+        strncat(gRespStr, "\r\n", sizeof(gRespStr) - strlen(gRespStr) - 1);
     }
 
     wfaCtrlSend(gCaSockfd, (BYTE *)gRespStr, strlen(gRespStr));
@@ -441,42 +445,47 @@ int wfaTrafficAgentRecvStopResp(BYTE *cmdBuf)
     else
     {
         sprintf(gRespStr, "status,COMPLETE,streamID,");
+
+        // Available size for gRespStr. Note that it reserves 2 bytes for
+        // ending "\r\n".
+        const size_t strSize = sizeof(gRespStr) - 3;
+        
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %d", statResp[i].streamId);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
-        strncat(gRespStr, ",txFrames,", 10);
+        strncat(gRespStr, ",txFrames,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %u", statResp[i].cmdru.stats.txFrames);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
-        strncat(gRespStr, ",rxFrames,", 10);
+        strncat(gRespStr, ",rxFrames,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %u", statResp[i].cmdru.stats.rxFrames);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
-        strncat(gRespStr, ",txPayloadBytes,", 16);
+        strncat(gRespStr, ",txPayloadBytes,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %llu", statResp[i].cmdru.stats.txPayloadBytes);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
-        strncat(gRespStr, ",rxPayloadBytes,", 16);
+        strncat(gRespStr, ",rxPayloadBytes,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %llu", statResp[i].cmdru.stats.rxPayloadBytes);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
-        strncat(gRespStr, ",outOfSequenceFrames,", 20);
+        strncat(gRespStr, ",outOfSequenceFrames,", strSize - strlen(gRespStr));
         for(i=0; i<numStreams; i++)
         {
             sprintf(copyBuf, " %d", statResp[i].cmdru.stats.outOfSequenceFrames);
-            strncat(gRespStr, copyBuf, sizeof(copyBuf)-1);
+            strncat(gRespStr, copyBuf, strSize - strlen(gRespStr));
         }
-        strncat(gRespStr, "\r\n", 4);
+        strncat(gRespStr, "\r\n", sizeof(gRespStr) - strlen(gRespStr) -1);
     }
 
     wfaCtrlSend(gCaSockfd, (BYTE *)gRespStr, strlen(gRespStr));
