@@ -133,6 +133,9 @@ int getParamValueStr(char *pcmdStr, char *pParam, char *paramValue, int paramVal
  */
 int cmdProcNotDefinedYet(char *pcmdStr, char *buf, int *len)
 {
+    WFA_UNUSED(pcmdStr);
+    WFA_UNUSED(buf);
+    WFA_UNUSED(len);
     printf("The command processing function not defined.\n");
 
     /* need to send back a response */
@@ -149,6 +152,7 @@ extern unsigned short wfa_defined_debug;
  */
 int xcCmdProcGetVersion(char *pcmdStr, BYTE *aBuf, int *aLen)
 {
+    WFA_UNUSED(pcmdStr);
     DPRINT_INFO(WFA_OUT, "start xcCmdProcGetVersion ...\n");
 
     if(aBuf == NULL)
@@ -4685,6 +4689,7 @@ int xcCmdProcStaDevSendFrame(char *pcmdStr, BYTE *aBuf, int *aLen)
 
 int xcCmdProcStaTestBedCmd(char *pcmdStr, BYTE *aBuf, int *aLen)
 {
+    WFA_UNUSED(pcmdStr);
     dutCommand_t *info = (dutCommand_t *) (aBuf+sizeof(wfaTLV));
 
     DPRINT_INFO(WFA_OUT, "This is a TestBed Station Command ONLY\n");

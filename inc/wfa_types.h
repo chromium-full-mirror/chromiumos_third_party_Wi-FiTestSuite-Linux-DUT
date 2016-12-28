@@ -91,4 +91,8 @@ enum wfa_state
     WFA_F_DISABLED = 4,            /* forced disabled */
     WFA_INVALID_BOOL = 0xFF
 };
+
+// Used to mark unused variable. 
+#define WFA_UNUSED(x) (void)(x)
+
 #endif
