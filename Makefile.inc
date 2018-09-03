@@ -13,12 +13,15 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
 # USE OR PERFORMANCE OF THIS SOFTWARE.
 #
+CC ?= gcc
+AR ?= ar
 LIB=lib
 DUT=dut
 CA=ca
 UCC=ucc
 CON=console_src
 WTG=WTGService
+MAKE?=make
 
 # This is for WMM-PS
 #for Ext TG
