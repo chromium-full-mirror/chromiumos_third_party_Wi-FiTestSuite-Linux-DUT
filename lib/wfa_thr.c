@@ -593,7 +593,7 @@ void * wfa_wmm_thread(void *thr_param)
     tgWMM_t *my_wmm = &wmm_thr[myId];
     tgStream_t *myStream = NULL;
     int myStreamId, i=0,rttime=0,difftime=0, rcvCount=0,sendCount=0;
-    int mySock = -1, status, respLen = 0, nbytes = 0, ret=0, j=0;
+    int mySock = -1, status, respLen = 0, nbytes = 0, j=0;
     tgProfile_t *myProfile;
     pthread_attr_t tattr;
 #ifdef WFA_WMM_PS_EXT
@@ -601,10 +601,10 @@ void * wfa_wmm_thread(void *thr_param)
     StationProcStatetbl_t  curr_state;
 #endif
 
-//#ifdef WFA_VOICE_EXT
     struct timeval lstime, lrtime;
+#ifdef WFA_VOICE_EXT
     int asn = 1;  /* everytime it starts from 1, and to ++ */
-//#endif
+#endif /* WFA_VOICE_EXT */
 
     wPT_ATTR_INIT(&tattr);
     wPT_ATTR_SETSCH(&tattr, SCHED_RR);
@@ -739,7 +739,7 @@ void * wfa_wmm_thread(void *thr_param)
 
                 tmout.tv_sec = 0;
                 tmout.tv_usec = 15000;     // set for 15000 microsec timeout for rcv              
-                ret = setsockopt(mySock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tmout, (socklen_t) sizeof(tmout)); 
+                setsockopt(mySock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tmout, (socklen_t) sizeof(tmout)); 
                 
                 rcvCount=0; sendFailCount=0;
                 j=0;  sendCount=0;

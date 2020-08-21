@@ -42,7 +42,7 @@
 
 
 extern unsigned short wfa_defined_debug;
-char gRespStr[WFA_BUFF_512];
+char gRespStr[WFA_BUFF_1K];
 
 dutCommandRespFuncPtr wfaCmdRespProcFuncTbl[WFA_STA_RESPONSE_END+1] =
 {
@@ -773,9 +773,9 @@ int wfaDeviceListIFResp(BYTE *cmdBuf)
         {
             if(ifResp->ifs[i][0] != '\0')
             {
-                strncat(gRespStr,",", 4);
-                strncat(gRespStr, ifResp->ifs[i], sizeof(ifResp->ifs[i]));
-                strncat(gRespStr, "\r\n", 4);
+                strcat(gRespStr,",");
+                strcat(gRespStr, ifResp->ifs[i]);
+                strcat(gRespStr, "\r\n");
             }
         }
 
@@ -1308,6 +1308,7 @@ int wfaStaInvokeCommandResp(BYTE *cmdBuf)
 			char advidList[256];
 			char serviceList[256];
 			char serviceMac[256];
+                        char hexBuf[128];
 			
 			memset(advidList,'\0',256);
 			memset(serviceList,'\0',256);
@@ -1316,12 +1317,13 @@ int wfaStaInvokeCommandResp(BYTE *cmdBuf)
 			for (i =0 ; i < invokeCmdResp->invokeCmdResp.advRsp.numServInfo; i++)
 			{
 				if (serviceList[0] == '\0') { 
-					sprintf(serviceList, "%s", invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].servName); 
+					strcpy(serviceList, invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].servName); 
 				} else { 
-					sprintf(serviceList, "%s %s", serviceList, invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].servName); 
+                                  strcat(strcat(serviceList, " "), invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].servName); 
 				} 
-				sprintf(advidList, "%s %lx", advidList,invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].advtID );			
-				sprintf(serviceMac, "%s %s", serviceMac,invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].serviceMac );			
+				sprintf(hexBuf, " %lx", invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].advtID);
+                                strcat(advidList, hexBuf);
+                                strcat(strcat(serviceMac, " "), invokeCmdResp->invokeCmdResp.advRsp.servAdvInfo[i].serviceMac);
 			}
 			sprintf(gRespStr, "status,COMPLETE,ServName,%s,AdvID,%s,Service_Mac,%s\r\n",serviceList,advidList,serviceMac );
 			printf("status,COMPLETE,ServName,%s,AdvID,%s,Service_Mac,%s\r\n",serviceList,advidList,serviceMac );

@@ -461,8 +461,10 @@ int xcCmdProcAgentConfig(char *pcmdStr, BYTE *aBuf, int *aLen)
                     break;
 
                 case KW_TAGNAME:
-                    str=strtok_r(NULL,",",&pcmdStr);
-                    strncpy(pf->WmmpsTagName,str,strlen(str));
+                    str = strtok_r(NULL,",",&pcmdStr);
+                    // Note that #char to copy should not exceed the destination size.
+                    strncpy(pf->WmmpsTagName, str, sizeof(pf->WmmpsTagName));
+                    pf->WmmpsTagName[sizeof(pf->WmmpsTagName) - 1] = '\0';
                     printf("Got name %s\n",pf->WmmpsTagName);
                     break;
 
@@ -6526,7 +6528,7 @@ int xcCmdProcStaExecAction(char *pcmdStr, BYTE *aBuf, int *aLen)
 	   else if(strcasecmp(str, "trigger") == 0)
 	   {
 		 str = strtok_r(NULL, ",", &pcmdStr);
-         strncpy(staExecAction->trigger, str, 16);
+         strncpy(staExecAction->trigger, str, 15);
 	   }
 	   else if(strcasecmp(str, "askForLocCivic") == 0)
 	   {
@@ -6627,8 +6629,10 @@ int xcCmdProcStaInvokeCommand(char *pcmdStr, BYTE *aBuf, int *aLen)
 					  }
 					  else
 					  {
-						  strncpy(staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceName, str,63);						 
-						  staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceName[63]='\0';						  
+						  char buf[64];
+                                                  strncpy(buf, str, 63);
+                                                  buf[63] = '\0';
+                                                  strcpy(staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceName, buf);
 					  }
 
 					  staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceName_flag= 1;
@@ -6645,8 +6649,10 @@ int xcCmdProcStaInvokeCommand(char *pcmdStr, BYTE *aBuf, int *aLen)
 				  {
 					  staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceInfo_flag= 1;				  		
 					  str = strtok_r(NULL, ",", &pcmdStr);
-					  strncpy(staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceInfo, str,63);
-					  staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceInfo[63]='\0';
+					  char buf[64];
+					  strncpy(buf, str, 63);
+                                          buf[63] = '\0';
+					  strcpy(staInvokeCmd->InvokeCmds.primtiveType.AdvPrim.serviceName, buf);
 
 				  }
 				  else if (strcasecmp(str, "service_status") == 0)
@@ -6680,9 +6686,10 @@ int xcCmdProcStaInvokeCommand(char *pcmdStr, BYTE *aBuf, int *aLen)
 					  }
 					  else
 					  {
-						  strncpy(staInvokeCmd->InvokeCmds.primtiveType.SeekPrim.serviceName, str,63);						  
-						  staInvokeCmd->InvokeCmds.primtiveType.SeekPrim.serviceName[63]='\0';
-						  
+                                                  char buf[64];
+                                                  strncpy(buf, str, 63);
+                                                  buf[63] = '\0';
+                                                  strcpy(staInvokeCmd->InvokeCmds.primtiveType.SeekPrim.serviceName, buf);
 					  }
 					  staInvokeCmd->InvokeCmds.primtiveType.SeekPrim.serviceName_flag= 1;
 				  }
@@ -6942,38 +6949,35 @@ int xcCmdProcStaInvokeCommand(char *pcmdStr, BYTE *aBuf, int *aLen)
 
 	   else if(strcasecmp(str, "opcode") == 0)
 	   {
-		  str = strtok_r(NULL, ",", &pcmdStr);
-		  if (strcasecmp(str, "REQUEST_SESSION") == 0)
-		  	staInvokeCmd->InvokeCmds.Msg.opcode= eMsgReqSession;
-		  else if (strcasecmp(str, "REMOVE_SESSION") == 0)
-		  	staInvokeCmd->InvokeCmds.Msg.opcode= eMsgRmvSession;
-		  else if (strcasecmp(str, "REJECT_SESSION") == 0)
-		  	staInvokeCmd->InvokeCmds.Msg.opcode= eMsgRejSession;
-		  else if (strcasecmp(str, "ADDED_SESSION") == 0)
-		  	staInvokeCmd->InvokeCmds.Msg.opcode= eMsgAddedSession;		  
+	       str = strtok_r(NULL, ",", &pcmdStr);
+	       if (strcasecmp(str, "REQUEST_SESSION") == 0)
+                   staInvokeCmd->InvokeCmds.Msg.opcode= eMsgReqSession;
+	       else if (strcasecmp(str, "REMOVE_SESSION") == 0)
+                   staInvokeCmd->InvokeCmds.Msg.opcode= eMsgRmvSession;
+	       else if (strcasecmp(str, "REJECT_SESSION") == 0)
+	           staInvokeCmd->InvokeCmds.Msg.opcode= eMsgRejSession;
+	       else if (strcasecmp(str, "ADDED_SESSION") == 0)
+                   staInvokeCmd->InvokeCmds.Msg.opcode= eMsgAddedSession;
 
-			for(;;)
-			{
-			  str = strtok_r(NULL, ",", &pcmdStr);
-			  if(str == NULL || str[0] == '\0')
-				 break;
-			  if (strcasecmp(str, "session_id") == 0)
-			  { 	   
-				 str = strtok_r(NULL, ",", &pcmdStr);
-				 staInvokeCmd->InvokeCmds.Msg.sessionId_flag= 1;
-				 staInvokeCmd->InvokeCmds.Msg.sessionID = strtol(str,NULL,16);				 
-			  }
-			  else if (strcasecmp(str, "session_mac") == 0) // not  defined in CAPI, just for information
-			  {
-				  str = strtok_r(NULL, ",", &pcmdStr);
-				  staInvokeCmd->InvokeCmds.Msg.sessionMac_flag= 1;
-				  strncpy(staInvokeCmd->InvokeCmds.Msg.sessionMac,str,WFA_MAC_ADDR_STR_LEN-1);
-				  staInvokeCmd->InvokeCmds.Msg.sessionMac[WFA_MAC_ADDR_STR_LEN-1]='\0';
-			  }
+               for(;;)
+               {
+                   str = strtok_r(NULL, ",", &pcmdStr);
+                   if(str == NULL || str[0] == '\0')
+                       break;
+                   if (strcasecmp(str, "session_id") == 0)
+                   {
+                       str = strtok_r(NULL, ",", &pcmdStr);
+                       staInvokeCmd->InvokeCmds.Msg.sessionId_flag = 1;
+                       staInvokeCmd->InvokeCmds.Msg.sessionID = strtol(str, NULL, 16);
+                   } else if (strcasecmp(str, "session_mac") == 0) // not defined in CAPI, just for information
+                   {
+                       str = strtok_r(NULL, ",", &pcmdStr);
+                       staInvokeCmd->InvokeCmds.Msg.sessionMac_flag = 1;
+                       strncpy(staInvokeCmd->InvokeCmds.Msg.sessionMac, str, WFA_MAC_ADDR_STR_LEN - 1);
+                       staInvokeCmd->InvokeCmds.Msg.sessionMac[WFA_MAC_ADDR_STR_LEN - 1] = '\0';
+                   }
 
-			}
-
-		  
+               }
 	   }
 	}
 	

@@ -3725,9 +3725,9 @@ int wfaStaCliCommand(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
             break;
         else
         {
-            sprintf(CmdStr, "%s /%s",CmdStr,str);
+            strcat(strcat(CmdStr, " /"), str);
             str = strtok_r(NULL, ",", &pcmdStr);
-            sprintf(CmdStr, "%s %s",CmdStr,str);
+            strcat(strcat(CmdStr, " "), str);
         }
     }
     // check the return process
