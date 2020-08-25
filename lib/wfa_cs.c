@@ -1018,16 +1018,51 @@ int wfaStaGetInfo(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
 {
     dutCmdResponse_t infoResp;
     dutCommand_t *getInfo = (dutCommand_t *)caCmdBuf;
+    FILE *tmpfd;
+    char vendor[256];
+    const char* vendorFileName = "/tmp/ifvendor.txt";
 
-    /*
-     * Normally this is called to retrieve the vendor information
-     * from a interface, no implement yet
-     */
-    sprintf(infoResp.cmdru.info, "interface,%s,vendor,XXX,cardtype,802.11a/b/g", getInfo->intf);
+    sprintf(gCmdStr, "getifvendor.sh %s %s\n", getInfo->intf, vendorFileName);
+
+    if (system(gCmdStr) == -1) 
+    {
+        infoResp.status = STATUS_ERROR;
+        wfaEncodeTLV(WFA_STA_GET_INFO_RESP_TLV, sizeof(infoResp.status), (BYTE *)&infoResp, respBuf);
+        *respLen = WFA_TLV_HDR_LEN + sizeof(infoResp.status);
+
+        DPRINT_ERR(WFA_ERR, "script %s failed\n", vendorFileName);
+        return WFA_FAILURE;
+    }
+
+    /* open the output result and scan/retrieve the info */
+    tmpfd = fopen(vendorFileName, "r+");
+
+    if(tmpfd == NULL || fgets(vendor, 256, tmpfd) == NULL)
+    {
+        infoResp.status = STATUS_ERROR;
+        wfaEncodeTLV(WFA_STA_GET_INFO_RESP_TLV, sizeof(infoResp.status), (BYTE *)&infoResp, respBuf);
+        *respLen = WFA_TLV_HDR_LEN + sizeof(infoResp.status);
+
+        DPRINT_ERR(WFA_ERR, "file read failed\n");
+
+        if (tmpfd != NULL)
+        {
+            fclose(tmpfd);
+            remove(vendorFileName);            
+        }
+
+        return WFA_FAILURE;
+    }
+
+    snprintf(infoResp.cmdru.info, sizeof(infoResp.cmdru.info), "interface,%s,description,%s", 
+        getInfo->intf, vendor);
 
     infoResp.status = STATUS_COMPLETE;
-    wfaEncodeTLV(WFA_STA_GET_INFO_RESP_TLV, sizeof(infoResp), (BYTE *)&infoResp, respBuf);
-    *respLen = WFA_TLV_HDR_LEN + sizeof(infoResp);
+    wfaEncodeTLV(WFA_STA_GET_INFO_RESP_TLV, sizeof(infoResp.status), (BYTE *)&infoResp, respBuf);
+    *respLen = WFA_TLV_HDR_LEN + sizeof(infoResp.status);
+    
+    fclose(tmpfd);
+    remove(vendorFileName);
 
     return WFA_SUCCESS;
 }
