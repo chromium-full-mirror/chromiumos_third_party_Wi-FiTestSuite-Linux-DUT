@@ -458,28 +458,59 @@ int wfaStaSetIpConfig(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     dutCmdResponse_t *staSetIpResp = &gGenericResp;
 
     DPRINT_INFO(WFA_OUT, "entering wfaStaSetIpConfig ...\n");
+    
+    if (ipconfig->isDhcp) {
+        DPRINT_INFO(WFA_OUT, "error: dhcp not supported\n");
+        staSetIpResp->status = STATUS_INVALID;
+        wfaEncodeTLV(WFA_STA_SET_IP_CONFIG_RESP_TLV, 4, (BYTE *)staSetIpResp, respBuf);
+        *respLen = WFA_TLV_HDR_LEN + 4;
+
+        return WFA_FAILURE;
+    }
 
     /*
      * Use command 'ifconfig' to configure the interface ip address, mask.
      * (Linux specific).
      */
-    sprintf(gCmdStr, "/sbin/ifconfig %s %s netmask %s > /dev/null 2>&1 ", ipconfig->intf, ipconfig->ipaddr, ipconfig->mask);
-    sret = system(gCmdStr);
+    sprintf(gCmdStr, "ifconfig %s %s netmask %s >/tmp/ifconfig.log 2>&1", ipconfig->intf, ipconfig->ipaddr, ipconfig->mask);
+    DPRINT_INFO(WFA_OUT, "exec: %s\n", gCmdStr);
+    sret = system(gCmdStr);    
+    if (sret != 0) {
+        DPRINT_INFO(WFA_OUT, "exit code %d\n", sret);
+    }
 
     /* use command 'route add' to set set gatewway (linux specific) */
     if(ipconfig->defGateway[0] != '\0')
     {
-        sprintf(gCmdStr, "/sbin/route add default gw %s > /dev/null 2>&1", ipconfig->defGateway);
+        sprintf(gCmdStr, "route add default gw %s >/tmp/route.log 2>&1", ipconfig->defGateway);
+        DPRINT_INFO(WFA_OUT, "exec: %s\n", gCmdStr);
         sret = system(gCmdStr);
+        if (sret != 0) {
+            DPRINT_INFO(WFA_OUT, "exit code %d\n", sret);
+        }
     }
 
     /* set dns (linux specific) */
     sprintf(gCmdStr, "cp /etc/resolv.conf /tmp/resolv.conf.bk");
+    DPRINT_INFO(WFA_OUT, "exec: %s\n", gCmdStr);
     sret = system(gCmdStr);
+    if (sret != 0) {
+        DPRINT_INFO(WFA_OUT, "exit code %d backing up resolv.conf\n", sret);
+    }
     sprintf(gCmdStr, "echo nameserv %s > /etc/resolv.conf", ipconfig->pri_dns);
+    DPRINT_INFO(WFA_OUT, "exec: %s\n", gCmdStr);
     sret = system(gCmdStr);
-    sprintf(gCmdStr, "echo nameserv %s >> /etc/resolv.conf", ipconfig->sec_dns);
-    sret = system(gCmdStr);
+    if (sret != 0) {
+        DPRINT_INFO(WFA_OUT, "exit code %d writing resolv.conf\n", sret);
+    }
+    if (strlen(ipconfig->sec_dns) > 0) {
+        sprintf(gCmdStr, "echo nameserv %s >> /etc/resolv.conf", ipconfig->sec_dns);
+        DPRINT_INFO(WFA_OUT, "exec: %s\n", gCmdStr);
+        sret = system(gCmdStr);
+        if (sret != 0) {
+            DPRINT_INFO(WFA_OUT, "exit code %d writing resolv.conf\n", sret);
+        }
+    }
 
     /*
      * report status
