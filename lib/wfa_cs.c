@@ -787,6 +787,15 @@ int wfaSetEncryption1(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     return WFA_SUCCESS;
 }
 
+static int systemWithLog(char* command) {
+    DPRINT_INFO(WFA_OUT, "exec: %s\n", command);
+    int ret = system(command);
+    if (ret != 0) {
+        DPRINT_INFO(WFA_OUT, "exit code %d\n", ret);
+    }
+    return ret;
+}
+
 /*
  *  Since WEP is optional, this function could be used to replace
  *  wfaSetEncryption() if necessary.
@@ -800,26 +809,26 @@ int wfaSetEncryption(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     /*
      * disable the network first
      */
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", setEncryp->intf);
-    sret = system(gCmdStr);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", setEncryp->intf);
+    systemWithLog(gCmdStr);
 
     /*
      * set SSID
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", setEncryp->intf, setEncryp->ssid);
-    sret = system(gCmdStr);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", setEncryp->intf, setEncryp->ssid);
+    systemWithLog(gCmdStr);
 
     /*
      * Tell the supplicant for infrastructure mode (1)
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 mode 0", setEncryp->intf);
-    sret = system(gCmdStr);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 mode 0", setEncryp->intf);
+    systemWithLog(gCmdStr);
 
     /*
      * set Key management to NONE (NO WPA) for plaintext or WEP
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt NONE", setEncryp->intf);
-    sret = system(gCmdStr);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt NONE", setEncryp->intf);
+    systemWithLog(gCmdStr);
 
     /* set keys */
     if(setEncryp->encpType == 1)
@@ -828,9 +837,9 @@ int wfaSetEncryption(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
         {
             if(setEncryp->keys[i][0] != '\0')
             {
-                sprintf(gCmdStr, "wpa_cli -i %s set_network 0 wep_key%i %s",
+                sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 wep_key%i %s",
                         setEncryp->intf, i, setEncryp->keys[i]);
-                sret = system(gCmdStr);
+                systemWithLog(gCmdStr);
             }
         }
 
@@ -838,9 +847,9 @@ int wfaSetEncryption(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
         i = setEncryp->activeKeyIdx;
         if(setEncryp->keys[i][0] != '\0')
         {
-            sprintf(gCmdStr, "wpa_cli -i %s set_network 0 wep_tx_keyidx %i",
+            sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 wep_tx_keyidx %i",
                     setEncryp->intf, setEncryp->activeKeyIdx);
-            sret = system(gCmdStr);
+            systemWithLog(gCmdStr);
         }
     }
     else /* clearly remove the keys -- reported by p.schwann */
@@ -848,17 +857,17 @@ int wfaSetEncryption(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
 
         for(i = 0; i < 4; i++)
         {
-            sprintf(gCmdStr, "wpa_cli -i %s set_network 0 wep_key%i \"\"", setEncryp->intf, i);
-            sret = system(gCmdStr);
+            sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 wep_key%i \"\"", setEncryp->intf, i);
+            systemWithLog(gCmdStr);
         }
     }
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", setEncryp->intf);
-    sret = system(gCmdStr);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", setEncryp->intf);
+    systemWithLog(gCmdStr);
 
     setEncrypResp->status = STATUS_COMPLETE;
-    wfaEncodeTLV(WFA_STA_SET_ENCRYPTION_RESP_TLV, 4, (BYTE *)setEncrypResp, respBuf);
-    *respLen = WFA_TLV_HDR_LEN + 4;
+    wfaEncodeTLV(WFA_STA_SET_ENCRYPTION_RESP_TLV, sizeof(setEncrypResp->status), (BYTE *)setEncrypResp, respBuf);
+    *respLen = WFA_TLV_HDR_LEN + sizeof(setEncrypResp->status);
 
     return WFA_SUCCESS;
 }
