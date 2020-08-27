@@ -37,6 +37,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdarg.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <linux/types.h>
@@ -99,6 +101,30 @@ static int systemWithLog(char* command) {
     return ret;
 }
 
+// Read a line from a file.
+// It reads at most bufSize-1 bytes to buf.
+bool readLine(const char *filename, char *buf, const int bufSize) {
+
+    FILE *fp = NULL;
+    fp = fopen(filename, "r+");
+    if (fp == NULL)
+    {
+        return false;
+    }
+    char* ret = fgets(buf, bufSize, fp);
+    fclose(fp);
+    
+    if (ret == NULL)
+    {
+        return false;
+    }
+    
+    if (buf[strlen(buf) - 1] == '\n') 
+    {
+        buf[strlen(buf) - 1] = 0;
+    }
+    return true;
+}
 
 /*
  * agtCmdProcGetVersion(): response "ca_get_version" command to controller
@@ -122,6 +148,13 @@ int agtCmdProcGetVersion(int len, BYTE *parms, int *respLen, BYTE *respBuf)
     return WFA_SUCCESS;
 }
 
+#define RETURN_STA_ASSOCIATE_ERROR(statusCode, ...)\
+    staAssocResp->status = statusCode;\
+    wfaEncodeTLV(WFA_STA_ASSOCIATE_RESP_TLV, sizeof(staAssocResp->status), (BYTE *)staAssocResp, respBuf);\
+    *respLen = WFA_TLV_HDR_LEN + sizeof(staAssocResp->status);\
+    DPRINT_ERR(WFA_ERR, __VA_ARGS__);\
+    return WFA_FAILURE;
+
 /*
  * wfaStaAssociate():
  *    The function is to force the station wireless I/F to re/associate
@@ -132,47 +165,64 @@ int wfaStaAssociate(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     dutCommand_t *assoc = (dutCommand_t *)caCmdBuf;
     char *ifname = assoc->intf;
     dutCmdResponse_t *staAssocResp = &gGenericResp;
+    char cmdResult[32];
+    const char *tmpfile = "/tmp/.wfaStaAssociateTmp";
 
     DPRINT_INFO(WFA_OUT, "entering wfaStaAssociate ...\n");
-    /*
-     * if bssid appears, station should associate with the specific
-     * BSSID AP at its initial association.
-     * If it is different to the current associating AP, it will be forced to
-     * roam the new AP
-     */
-    if(assoc->cmdsu.assoc.bssid[0] != '\0')
+
+    // verify parameters
+    if(assoc->cmdsu.assoc.bssid[0] != '\0' || assoc->cmdsu.assoc.wps != 0)
     {
-        /* if (the first association) */
-        /* just do initial association to the BSSID */
+        RETURN_STA_ASSOCIATE_ERROR(STATUS_INVALID, "unsupported command parameter\n");
+    }
 
+    if(assoc->cmdsu.assoc.ssid[0] != '\0')
+    {
+        int networkid = -1;
+        
+        // get network id
+        sprintf(gCmdStr, "wpa_cli.sh -i %s list_networks | grep %s | cut -f1 -d= > %s",
+            ifname, assoc->cmdsu.assoc.ssid, tmpfile);
+        sret = systemWithLog(gCmdStr);
+        if (sret != 0) {
+            RETURN_STA_ASSOCIATE_ERROR(STATUS_ERROR, "error running wpa_cli, exit code: %d\n", sret);
+        }
 
-        /* else (station already associate to an AP) */
-        /* Do forced roaming */
+        if (!readLine(tmpfile, cmdResult, sizeof(cmdResult)))
+        {
+            RETURN_STA_ASSOCIATE_ERROR(STATUS_ERROR, "unable to read network id (network not configured?)\n");
+        }
+        networkid = atoi(cmdResult);
 
+        if (networkid == -1)
+        {
+            RETURN_STA_ASSOCIATE_ERROR(STATUS_ERROR, "network not configured\n");
+        } else
+        {
+            // enable the network and disable all others
+            sprintf(gCmdStr, "wpa_cli.sh -i %s select_network %d > %s",
+                ifname, networkid, tmpfile);
+            sret = systemWithLog(gCmdStr);            
+        }
     }
     else
     {
-        /* use 'ifconfig' command to bring down the interface (linux specific) */
-      //sprintf(gCmdStr, "ifconfig %s down", ifname);
-      //sret = systemWithLog(gCmdStr);
-
-        /* use 'ifconfig' command to bring up the interface (linux specific) */
-      //sprintf(gCmdStr, "ifconfig %s up", ifname);
-      //sret = systemWithLog(gCmdStr);
-
-        /*
-         *  use 'wpa_cli' command to force a 802.11 re/associate
-         *  (wpa_supplicant specific)
-         */
-        sprintf(gCmdStr, "wpa_cli.sh -i%s reassociate", ifname);
-        sret = systemWithLog(gCmdStr);
+        // reassociate to current connected network        
+        sprintf(gCmdStr, "wpa_cli.sh -i%s reassociate > %s", ifname, tmpfile);
+        sret = systemWithLog(gCmdStr);        
     }
 
-    /*
-     * Then report back to control PC for completion.
-     * This does not have failed/error status. The result only tells
-     * a completion.
-     */
+    // check wpa_cli response
+    if (!readLine(tmpfile, cmdResult, sizeof(cmdResult)))
+    {
+        RETURN_STA_ASSOCIATE_ERROR(STATUS_ERROR, "unable to read command output\n");
+    }
+    
+    if (strcmp(cmdResult, "OK") != 0)
+    {
+        RETURN_STA_ASSOCIATE_ERROR(STATUS_ERROR, "associate network failed, error: %s\n", cmdResult);
+    }
+
     staAssocResp->status = STATUS_COMPLETE;
     wfaEncodeTLV(WFA_STA_ASSOCIATE_RESP_TLV, 4, (BYTE *)staAssocResp, respBuf);
     *respLen = WFA_TLV_HDR_LEN + 4;
