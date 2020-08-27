@@ -90,6 +90,16 @@ int chk_ret_status()
         return WFA_FAILURE;
 }
 
+static int systemWithLog(char* command) {
+    DPRINT_INFO(WFA_OUT, "exec: %s\n", command);
+    int ret = system(command);
+    if (ret != 0) {
+        DPRINT_INFO(WFA_OUT, "exit code %d\n", ret);
+    }
+    return ret;
+}
+
+
 /*
  * agtCmdProcGetVersion(): response "ca_get_version" command to controller
  *  input:  cmd --- not used
@@ -154,7 +164,7 @@ int wfaStaAssociate(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
          *  use 'wpa_cli' command to force a 802.11 re/associate
          *  (wpa_supplicant specific)
          */
-        sprintf(gCmdStr, "wpa_cli -i%s reassociate", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i%s reassociate", ifname);
         sret = system(gCmdStr);
     }
 
@@ -211,7 +221,7 @@ int wfaStaReAssociate(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
          *  use 'wpa_cli' command to force a 802.11 re/associate
          *  (wpa_supplicant specific)
          */
-        sprintf(gCmdStr, "wpa_cli -i%s reassociate", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i%s reassociate", ifname);
         sret = system(gCmdStr);
     }
 
@@ -256,7 +266,7 @@ int wfaStaIsConnected(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
      * use 'wpa_cli' command to check the interface status
      * none, scanning or complete (wpa_supplicant specific)
      */
-    sprintf(gCmdStr, "wpa_cli -i%s status | grep ^wpa_state= | cut -f2- -d= > /tmp/.isConnected", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i%s status | grep ^wpa_state= | cut -f2- -d= > /tmp/.isConnected", ifname);
     sret = system(gCmdStr);
 
     /*
@@ -756,28 +766,28 @@ int wfaSetEncryption1(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     /*
      * disable the network first
      */
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", setEncryp->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", setEncryp->intf);
     sret = system(gCmdStr);
 
     /*
      * set SSID
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", setEncryp->intf, setEncryp->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", setEncryp->intf, setEncryp->ssid);
     sret = system(gCmdStr);
 
     /*
      * Tell the supplicant for infrastructure mode (1)
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 mode 0", setEncryp->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 mode 0", setEncryp->intf);
     sret = system(gCmdStr);
 
     /*
      * set Key management to NONE (NO WPA) for plaintext or WEP
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt NONE", setEncryp->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt NONE", setEncryp->intf);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", setEncryp->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", setEncryp->intf);
     sret = system(gCmdStr);
 
     setEncrypResp->status = STATUS_COMPLETE;
@@ -785,15 +795,6 @@ int wfaSetEncryption1(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     *respLen = WFA_TLV_HDR_LEN + 4;
 
     return WFA_SUCCESS;
-}
-
-static int systemWithLog(char* command) {
-    DPRINT_INFO(WFA_OUT, "exec: %s\n", command);
-    int ret = system(command);
-    if (ret != 0) {
-        DPRINT_INFO(WFA_OUT, "exit code %d\n", ret);
-    }
-    return ret;
 }
 
 /*
@@ -904,11 +905,11 @@ int wfaStaSetEapTLS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sret = system(gCmdStr);
 #else
 
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", ifname);
     sret = system(gCmdStr);
 
     /* ssid */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", ifname, setTLS->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", ifname, setTLS->ssid);
     sret = system(gCmdStr);
 
     /* key management */
@@ -924,7 +925,7 @@ int wfaStaSetEapTLS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     }
     else if(strcasecmp(setTLS->keyMgmtType, "wpa") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     }
     else if(strcasecmp(setTLS->keyMgmtType, "wpa2") == 0)
     {
@@ -937,25 +938,25 @@ int wfaStaSetEapTLS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sret = system(gCmdStr);
 
     /* protocol WPA */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 proto WPA", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 proto WPA", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 eap TLS", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 eap TLS", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ca_cert '\"%s\"'", ifname, setTLS->trustedRootCA);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ca_cert '\"%s\"'", ifname, setTLS->trustedRootCA);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 identity '\"wifi-user@wifilabs.local\"'", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 identity '\"wifi-user@wifilabs.local\"'", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 private_key '\"%s/%s\"'", ifname, CERTIFICATES_PATH, setTLS->clientCertificate);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 private_key '\"%s/%s\"'", ifname, CERTIFICATES_PATH, setTLS->clientCertificate);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 private_key_passwd '\"wifi\"'", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 private_key_passwd '\"wifi\"'", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", ifname);
     sret = system(gCmdStr);
 #endif
 
@@ -984,11 +985,11 @@ int wfaStaSetPSK(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sprintf(gCmdStr, "wfa_set_psk %s %s %s", setPSK->intf, setPSK->ssid, setPSK->passphrase);
     sret = system(gCmdStr);
 #else
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", setPSK->intf, setPSK->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", setPSK->intf, setPSK->ssid);
     sret = system(gCmdStr);
 
     if(strcasecmp(setPSK->keyMgmtType, "wpa2-sha256") == 0)
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA2-SHA256", setPSK->intf);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA2-SHA256", setPSK->intf);
     else if(strcasecmp(setPSK->keyMgmtType, "wpa2") == 0)
     {
         // take all and device to pick it supported.
@@ -1006,14 +1007,14 @@ int wfaStaSetPSK(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
 
     }
     else
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-PSK", setPSK->intf);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-PSK", setPSK->intf);
 
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 psk '\"%s\"'", setPSK->intf, setPSK->passphrase);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 psk '\"%s\"'", setPSK->intf, setPSK->passphrase);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", setPSK->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", setPSK->intf);
     sret = system(gCmdStr);
 
     /* if PMF enable */
@@ -1128,23 +1129,23 @@ int wfaStaSetEapTTLS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sret = system(gCmdStr);
 #else
 
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", ifname, setTTLS->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", ifname, setTTLS->ssid);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 identity '\"%s\"'", ifname, setTTLS->username);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 identity '\"%s\"'", ifname, setTTLS->username);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 password '\"%s\"'", ifname, setTTLS->passwd);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 password '\"%s\"'", ifname, setTTLS->passwd);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     sret = system(gCmdStr);
 
     /* This may not need to set. if it is not set, default to take all */
-//   sprintf(cmdStr, "wpa_cli -i %s set_network 0 pairwise '\"%s\"", ifname, setTTLS->encrptype);
+//   sprintf(cmdStr, "wpa_cli.sh -i %s set_network 0 pairwise '\"%s\"", ifname, setTTLS->encrptype);
     if(strcasecmp(setTTLS->keyMgmtType, "wpa2-sha256") == 0)
     {
     }
@@ -1169,19 +1170,19 @@ int wfaStaSetEapTTLS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     }
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 eap TTLS", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 eap TTLS", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ca_cert '\"%s/%s\"'", ifname, CERTIFICATES_PATH, setTTLS->trustedRootCA);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ca_cert '\"%s/%s\"'", ifname, CERTIFICATES_PATH, setTTLS->trustedRootCA);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 proto WPA", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 proto WPA", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 phase2 '\"auth=MSCHAPV2\"'", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 phase2 '\"auth=MSCHAPV2\"'", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", ifname);
     sret = system(gCmdStr);
 #endif
 
@@ -1212,43 +1213,43 @@ int wfaStaSetEapSIM(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sret = system(gCmdStr);
 #else
 
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", ifname, setSIM->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", ifname, setSIM->ssid);
     sret = system(gCmdStr);
 
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 identity '\"%s\"'", ifname, setSIM->username);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 identity '\"%s\"'", ifname, setSIM->username);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 pairwise '\"%s\"'", ifname, setSIM->encrptype);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 pairwise '\"%s\"'", ifname, setSIM->encrptype);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 eap SIM", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 eap SIM", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 proto WPA", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 proto WPA", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", ifname);
     sret = system(gCmdStr);
 
     if(strcasecmp(setSIM->keyMgmtType, "wpa2-sha256") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-SHA256", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-SHA256", ifname);
     }
     else if(strcasecmp(setSIM->keyMgmtType, "wpa2-eap") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     }
     else if(strcasecmp(setSIM->keyMgmtType, "wpa2-ft") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-FT", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-FT", ifname);
     }
     else if(strcasecmp(setSIM->keyMgmtType, "wpa") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     }
     else if(strcasecmp(setSIM->keyMgmtType, "wpa2") == 0)
     {
@@ -1295,42 +1296,42 @@ int wfaStaSetPEAP(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sret = system(gCmdStr);
 #else
 
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", ifname, setPEAP->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", ifname, setPEAP->ssid);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 eap PEAP", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 eap PEAP", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 anonymous_identity '\"anonymous\"' ", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 anonymous_identity '\"anonymous\"' ", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 identity '\"%s\"'", ifname, setPEAP->username);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 identity '\"%s\"'", ifname, setPEAP->username);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 password '\"%s\"'", ifname, setPEAP->passwd);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 password '\"%s\"'", ifname, setPEAP->passwd);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ca_cert '\"%s/%s\"'", ifname, CERTIFICATES_PATH, setPEAP->trustedRootCA);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ca_cert '\"%s/%s\"'", ifname, CERTIFICATES_PATH, setPEAP->trustedRootCA);
     sret = system(gCmdStr);
 
     if(strcasecmp(setPEAP->keyMgmtType, "wpa2-sha256") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-SHA256", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-SHA256", ifname);
     }
     else if(strcasecmp(setPEAP->keyMgmtType, "wpa2-eap") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     }
     else if(strcasecmp(setPEAP->keyMgmtType, "wpa2-ft") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-FT", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-FT", ifname);
     }
     else if(strcasecmp(setPEAP->keyMgmtType, "wpa") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     }
     else if(strcasecmp(setPEAP->keyMgmtType, "wpa2") == 0)
     {
@@ -1342,13 +1343,13 @@ int wfaStaSetPEAP(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     }
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 phase1 '\"peaplabel=%i\"'", ifname, setPEAP->peapVersion);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 phase1 '\"peaplabel=%i\"'", ifname, setPEAP->peapVersion);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 phase2 '\"auth=%s\"'", ifname, setPEAP->innerEAP);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 phase2 '\"auth=%s\"'", ifname, setPEAP->innerEAP);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", ifname);
     sret = system(gCmdStr);
 #endif
 
@@ -1558,9 +1559,9 @@ int wfaStaGetBSSID(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
 
     DPRINT_INFO(WFA_OUT, "Entering wfaStaGetBSSID ...\n");
     /* retrieve the BSSID */
-    sprintf(gCmdStr, "wpa_cli status > /tmp/bssid.txt");
+    sprintf(gCmdStr, "wpa_cli.sh status > /tmp/bssid.txt");
 
-    sret = system(gCmdStr);
+    systemWithLog(gCmdStr);
 
     tmpfd = fopen("/tmp/bssid.txt", "r+");
     if(tmpfd == NULL)
@@ -1624,13 +1625,13 @@ int wfaStaSetIBSS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     /*
      * disable the network first
      */
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", setIBSS->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", setIBSS->intf);
     sret = system(gCmdStr);
 
     /*
      * set SSID
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", setIBSS->intf, setIBSS->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", setIBSS->intf, setIBSS->ssid);
     sret = system(gCmdStr);
 
     /*
@@ -1642,13 +1643,13 @@ int wfaStaSetIBSS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     /*
      * Tell the supplicant for IBSS mode (1)
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 mode 1", setIBSS->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 mode 1", setIBSS->intf);
     sret = system(gCmdStr);
 
     /*
      * set Key management to NONE (NO WPA) for plaintext or WEP
      */
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt NONE", setIBSS->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt NONE", setIBSS->intf);
     sret = system(gCmdStr);
 
     if(setIBSS->encpType == 1)
@@ -1657,7 +1658,7 @@ int wfaStaSetIBSS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
         {
             if(strlen(setIBSS->keys[i]) ==5 || strlen(setIBSS->keys[i]) == 13)
             {
-                sprintf(gCmdStr, "wpa_cli -i %s set_network 0 wep_key%i \"%s\"",
+                sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 wep_key%i \"%s\"",
                         setIBSS->intf, i, setIBSS->keys[i]);
                 sret = system(gCmdStr);
             }
@@ -1666,13 +1667,13 @@ int wfaStaSetIBSS(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
         i = setIBSS->activeKeyIdx;
         if(strlen(setIBSS->keys[i]) ==5 || strlen(setIBSS->keys[i]) == 13)
         {
-            sprintf(gCmdStr, "wpa_cli -i %s set_network 0 wep_tx_keyidx %i",
+            sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 wep_tx_keyidx %i",
                     setIBSS->intf, setIBSS->activeKeyIdx);
             sret = system(gCmdStr);
         }
     }
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", setIBSS->intf);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", setIBSS->intf);
     sret = system(gCmdStr);
 
     setIbssResp->status = STATUS_COMPLETE;
@@ -2017,16 +2018,16 @@ int wfaStaSetEapFAST(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sret = system(gCmdStr);
 #else
 
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", ifname, setFAST->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", ifname, setFAST->ssid);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 identity '\"%s\"'", ifname, setFAST->username);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 identity '\"%s\"'", ifname, setFAST->username);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 password '\"%s\"'", ifname, setFAST->passwd);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 password '\"%s\"'", ifname, setFAST->passwd);
     sret = system(gCmdStr);
 
     if(strcasecmp(setFAST->keyMgmtType, "wpa2-sha256") == 0)
@@ -2041,7 +2042,7 @@ int wfaStaSetEapFAST(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     }
     else if(strcasecmp(setFAST->keyMgmtType, "wpa") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     }
     else if(strcasecmp(setFAST->keyMgmtType, "wpa2") == 0)
     {
@@ -2053,22 +2054,22 @@ int wfaStaSetEapFAST(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     }
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 eap FAST", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 eap FAST", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 pac_file '\"%s/%s\"'", ifname, CERTIFICATES_PATH,     setFAST->pacFileName);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 pac_file '\"%s/%s\"'", ifname, CERTIFICATES_PATH,     setFAST->pacFileName);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 anonymous_identity '\"anonymous\"'", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 anonymous_identity '\"anonymous\"'", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 phase1 '\"fast_provisioning=1\"'", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 phase1 '\"fast_provisioning=1\"'", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 phase2 '\"auth=%s\"'", ifname,setFAST->innerEAP);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 phase2 '\"auth=%s\"'", ifname,setFAST->innerEAP);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", ifname);
     sret = system(gCmdStr);
 #endif
 
@@ -2090,10 +2091,10 @@ int wfaStaSetEapAKA(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     sret = system(gCmdStr);
 #else
 
-    sprintf(gCmdStr, "wpa_cli -i %s disable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network 0", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 ssid '\"%s\"'", ifname, setAKA->ssid);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 ssid '\"%s\"'", ifname, setAKA->ssid);
     sret = system(gCmdStr);
 
     if(strcasecmp(setAKA->keyMgmtType, "wpa2-sha256") == 0)
@@ -2108,7 +2109,7 @@ int wfaStaSetEapAKA(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     }
     else if(strcasecmp(setAKA->keyMgmtType, "wpa") == 0)
     {
-        sprintf(gCmdStr, "wpa_cli -i %s set_network 0 key_mgmt WPA-EAP", ifname);
+        sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 key_mgmt WPA-EAP", ifname);
     }
     else if(strcasecmp(setAKA->keyMgmtType, "wpa2") == 0)
     {
@@ -2120,24 +2121,24 @@ int wfaStaSetEapAKA(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     }
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 proto WPA2", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 proto WPA2", ifname);
     sret = system(gCmdStr);
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 proto CCMP", ifname);
-    sret = system(gCmdStr);
-
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 eap AKA", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 proto CCMP", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 phase1 \"result_ind=1\"", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 eap AKA", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 identity '\"%s\"'", ifname, setAKA->username);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 phase1 \"result_ind=1\"", ifname);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s set_network 0 password '\"%s\"'", ifname, setAKA->passwd);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 identity '\"%s\"'", ifname, setAKA->username);
     sret = system(gCmdStr);
 
-    sprintf(gCmdStr, "wpa_cli -i %s enable_network 0", ifname);
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set_network 0 password '\"%s\"'", ifname, setAKA->passwd);
+    sret = system(gCmdStr);
+
+    sprintf(gCmdStr, "wpa_cli.sh -i %s enable_network 0", ifname);
     sret = system(gCmdStr);
 #endif
 
