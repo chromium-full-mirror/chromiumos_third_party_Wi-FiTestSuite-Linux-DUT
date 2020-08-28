@@ -20,10 +20,10 @@
 # $1 is tmp file name
 # $2 is the interface name
 
-echo -n "dhcpcli=" > $1 ; ps ax | grep dhc | cut -f2 -d: | cut -f2 -d' ' | grep dhclient >> $1
+echo -n "dhcpcli=" > $1 ; ps ax | grep -E "dhc.*$2" | cut -f2 -d: | cut -f2 -d' ' | grep -m 1 dhcpcd >> $1
 echo ' ' >> $1
-echo -n "mac=" >> $1; ifconfig $2 | grep HWaddr | cut -f3 -dr >> $1 
-echo -n "ipaddr=" >> $1; ifconfig $2 | grep "inet addr" | cut -f2 -d: >> $1 
-echo -n "bcast=" >> $1; ifconfig $2 | grep "inet addr" | cut -f3 -d: >> $1 
-echo -n "mask=" >> $1; ifconfig $2 | grep "inet addr" | cut -f4 -d: >> $1 
+echo -n "mac=" >> $1; ifconfig $2 | grep ether | tr -s ' ' | cut -f 3 -d ' ' >> $1 
+echo -n "ipaddr=" >> $1; ifconfig $2 | grep 'inet ' | tr -s ' ' | cut -f 3 -d ' ' >> $1
+echo -n "bcast=" >> $1; ifconfig $2 | grep 'inet ' | tr -s ' ' | cut -f 7 -d ' ' >> $1
+echo -n "mask=" >> $1; ifconfig $2 | grep 'inet ' | tr -s ' ' | cut -f 5 -d ' ' >> $1
 grep nameserver /etc/resolv.conf >> $1 

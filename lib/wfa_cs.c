@@ -367,7 +367,7 @@ int wfaStaIsConnected(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
  */
 int wfaStaGetIpConfig(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
 {
-    int slen, ret, i = 0;
+    int slen, i = 0;
     dutCommand_t *getIpConf = (dutCommand_t *)caCmdBuf;
     dutCmdResponse_t *ipconfigResp = &gGenericResp;
     char *ifname = getIpConf->intf;
@@ -377,21 +377,6 @@ int wfaStaGetIpConfig(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
     char string[256];
     char *str;
 
-    /*
-     * check a script file (the current implementation specific)
-     */
-    ret = access("/usr/local/sbin/getipconfig.sh", F_OK);
-    if(ret == -1)
-    {
-        ipconfigResp->status = STATUS_ERROR;
-        wfaEncodeTLV(WFA_STA_GET_IP_CONFIG_RESP_TLV, 4, (BYTE *)ipconfigResp, respBuf);
-        *respLen = WFA_TLV_HDR_LEN + 4;
-
-        DPRINT_ERR(WFA_ERR, "file not exist\n");
-        return WFA_FAILURE;
-
-    }
-
     strcpy(ifinfo->dns[0], "0");
     strcpy(ifinfo->dns[1], "0");
 
@@ -399,10 +384,28 @@ int wfaStaGetIpConfig(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
      * Run the script file "getipconfig.sh" to check the ip status
      * (current implementation  specific).
      * note: "getipconfig.sh" is only defined for the current implementation
+     *
+     * Example output:
+     * dhcpcli=/sbin/dhcpcd
+     *
+     * mac=50:e0:85:5f:e9:93
+     * ipaddr=192.168.0.116
+     * bcast=192.168.0.255
+     * mask=255.255.255.0
+     * nameserver 192.168.0.1
      */
     sprintf(gCmdStr, "getipconfig.sh /tmp/ipconfig.txt %s\n", ifname);
 
     sret = systemWithLog(gCmdStr);
+    if (sret != 0)
+    {
+        ipconfigResp->status = STATUS_ERROR;
+        wfaEncodeTLV(WFA_STA_GET_IP_CONFIG_RESP_TLV, 4, (BYTE *)ipconfigResp, respBuf);
+        *respLen = WFA_TLV_HDR_LEN + 4;
+
+        DPRINT_ERR(WFA_ERR, "error from getipconfig exec: %d\n", sret);
+        return WFA_FAILURE;
+    }
 
     /* open the output result and scan/retrieve the info */
     tmpfd = fopen("/tmp/ipconfig.txt", "r+");
@@ -433,31 +436,26 @@ int wfaStaGetIpConfig(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
                 ifinfo->isDhcp = 0;
         }
 
-        /* find out the ip address */
         if(strncmp(string, "ipaddr", 6) == 0)
         {
-            str = strtok(string, "=");
-            str = strtok(NULL, " ");
+            str = strchr(string, '=');
             if(str != NULL)
             {
-                wSTRNCPY(ifinfo->ipaddr, str, 15);
-
-                ifinfo->ipaddr[15]='\0';
+                strcpy(ifinfo->ipaddr, str + 1);
+                slen = strlen(ifinfo->ipaddr);
+                ifinfo->ipaddr[slen-1] = '\0';
             }
             else
-                wSTRNCPY(ifinfo->ipaddr, "none", 15);
+                strcpy(ifinfo->ipaddr, "none");
         }
 
         /* check the mask */
         if(strncmp(string, "mask", 4) == 0)
         {
-            char ttstr[16];
-            char *ttp = ttstr;
-
-            str = strtok_r(string, "=", &ttp);
-            if(*ttp != '\0')
+            str = strchr(string, '=');
+            if(str != NULL)
             {
-                strcpy(ifinfo->mask, ttp);
+                strcpy(ifinfo->mask, str + 1);
                 slen = strlen(ifinfo->mask);
                 ifinfo->mask[slen-1] = '\0';
             }
@@ -468,13 +466,10 @@ int wfaStaGetIpConfig(int len, BYTE *caCmdBuf, int *respLen, BYTE *respBuf)
         /* find out the dns server ip address */
         if(strncmp(string, "nameserv", 8) == 0)
         {
-            char ttstr[16];
-            char *ttp = ttstr;
-
-            str = strtok_r(string, " ", &ttp);
+            str = strchr(string, ' ');
             if(str != NULL && i < 2)
             {
-                strcpy(ifinfo->dns[i], ttp);
+                strcpy(ifinfo->dns[i], str + 1);
                 slen = strlen(ifinfo->dns[i]);
                 ifinfo->dns[i][slen-1] = '\0';
             }
