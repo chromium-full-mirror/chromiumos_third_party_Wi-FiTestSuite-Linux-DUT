@@ -188,10 +188,10 @@ typeNameStr_t nameStr[] = {
     {WFA_STA_SET_11N_TLV, "sta_set_11n", xcCmdProcStaSet11n},
     {WFA_STA_SET_WIRELESS_TLV, "sta_set_wireless", xcCmdProcStaSetWireless},
     {WFA_STA_SEND_ADDBA_TLV, "sta_send_addba", xcCmdProcStaSendADDBA},
-    {WFA_STA_SET_RIFS_TEST_TLV, "sta_set_rifs_test", xcCmdProcStaSetRIFS},
     {WFA_STA_SEND_COEXIST_MGMT_TLV, "sta_send_coexist_mgmt",
      xcCmdProcStaSendCoExistMGMT},
 #endif
+    {WFA_STA_SET_RIFS_TEST_TLV, "sta_set_rifs_test", xcCmdProcStaSetRIFS},
     {WFA_STA_P2P_GET_DEV_ADDRESS_TLV, "sta_get_p2p_dev_address",
      xcCmdProcStaGetP2pDevAddress},
     {WFA_STA_P2P_SETP2P_TLV, "sta_set_p2p", xcCmdProcStaSetP2p},

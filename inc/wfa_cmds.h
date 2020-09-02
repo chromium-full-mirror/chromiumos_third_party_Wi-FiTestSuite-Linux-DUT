@@ -1477,6 +1477,7 @@ typedef struct dut_commands {
     caStaSetIBSS_t ibss;
     caStaUpload_t upload;
     caStaSetWMM_t setwmm;
+    caStaSetRIFS_t setrifs;
     staDebugSet_t dbg;
     caDevInfo_t dev;
     caStaDevSendFrame_t sf;

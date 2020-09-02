@@ -2400,6 +2400,38 @@ int wfaStaResetDefault(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 
 #else
 
+int wfaStaSetRIFS(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
+  caStaSetRIFS_t* setRifs = (caStaSetRIFS_t*)caCmdBuf;
+  dutCmdResponse_t* staSetRIFSResp = &gGenericResp;
+
+  DPRINT_INFO(WFA_OUT, "entering wfaStaSetRIFS ...\n");
+  DPRINT_INFO(WFA_OUT, "%s %d\n", setRifs->intf, setRifs->action);
+
+  if (setRifs->action) {
+    DPRINT_INFO(WFA_WNG,
+                "command sta_set_rifs_test is deprecated and not implemented "
+                "for action=enable\n");
+
+    staSetRIFSResp->status = STATUS_INVALID;
+    wfaEncodeTLV(WFA_STA_SET_RIFS_TEST_RESP_TLV, sizeof(staSetRIFSResp->status),
+                 (BYTE*)staSetRIFSResp, respBuf);
+    *respLen = WFA_TLV_HDR_LEN + sizeof(staSetRIFSResp->status);
+
+    return WFA_FAILURE;
+  }
+
+  DPRINT_INFO(WFA_WNG,
+              "command sta_set_rifs_test is deprecated and will be ignored for "
+              "action=disable\n");
+
+  staSetRIFSResp->status = STATUS_COMPLETE;
+  wfaEncodeTLV(WFA_STA_SET_RIFS_TEST_RESP_TLV, sizeof(staSetRIFSResp->status),
+               (BYTE*)staSetRIFSResp, respBuf);
+  *respLen = WFA_TLV_HDR_LEN + sizeof(staSetRIFSResp->status);
+
+  return WFA_SUCCESS;
+}
+
 int wfaStaTestBedCmd(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   dutCmdResponse_t* staCmdResp = &gGenericResp;
 
