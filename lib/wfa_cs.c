@@ -81,6 +81,14 @@ int sret = 0;
 
 extern char e2eResults[];
 
+#define RETURN_STA_CMD_ERROR(resp, statusCode, ...)                           \
+  resp->status = statusCode;                                                  \
+  wfaEncodeTLV(WFA_STA_ASSOCIATE_RESP_TLV, sizeof(resp->status), (BYTE*)resp, \
+               respBuf);                                                      \
+  *respLen = WFA_TLV_HDR_LEN + sizeof(resp->status);                          \
+  DPRINT_ERR(WFA_ERR, __VA_ARGS__);                                           \
+  return WFA_FAILURE;
+
 FILE* e2efp = NULL;
 int chk_ret_status() {
   char* ret = getenv(WFA_RET_ENV);
@@ -143,14 +151,6 @@ int agtCmdProcGetVersion(int len, BYTE* parms, int* respLen, BYTE* respBuf) {
   return WFA_SUCCESS;
 }
 
-#define RETURN_STA_ASSOCIATE_ERROR(statusCode, ...)                      \
-  staAssocResp->status = statusCode;                                     \
-  wfaEncodeTLV(WFA_STA_ASSOCIATE_RESP_TLV, sizeof(staAssocResp->status), \
-               (BYTE*)staAssocResp, respBuf);                            \
-  *respLen = WFA_TLV_HDR_LEN + sizeof(staAssocResp->status);             \
-  DPRINT_ERR(WFA_ERR, __VA_ARGS__);                                      \
-  return WFA_FAILURE;
-
 /*
  * wfaStaAssociate():
  *    The function is to force the station wireless I/F to re/associate
@@ -167,8 +167,8 @@ int wfaStaAssociate(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 
   // verify parameters
   if (assoc->cmdsu.assoc.bssid[0] != '\0' || assoc->cmdsu.assoc.wps != 0) {
-    RETURN_STA_ASSOCIATE_ERROR(STATUS_INVALID,
-                               "unsupported command parameter\n");
+    RETURN_STA_CMD_ERROR(staAssocResp, STATUS_INVALID,
+                         "unsupported command parameter\n");
   }
 
   if (assoc->cmdsu.assoc.ssid[0] != '\0') {
@@ -180,19 +180,20 @@ int wfaStaAssociate(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
             ifname, assoc->cmdsu.assoc.ssid, tmpfile);
     sret = systemWithLog(gCmdStr);
     if (sret != 0) {
-      RETURN_STA_ASSOCIATE_ERROR(
-          STATUS_ERROR, "error running wpa_cli, exit code: %d\n", sret);
+      RETURN_STA_CMD_ERROR(staAssocResp, STATUS_ERROR,
+                           "error running wpa_cli, exit code: %d\n", sret);
     }
 
     if (!readLine(tmpfile, cmdResult, sizeof(cmdResult))) {
-      RETURN_STA_ASSOCIATE_ERROR(
-          STATUS_ERROR,
+      RETURN_STA_CMD_ERROR(
+          staAssocResp, STATUS_ERROR,
           "unable to read network id (network not configured?)\n");
     }
     networkid = atoi(cmdResult);
 
     if (networkid == -1) {
-      RETURN_STA_ASSOCIATE_ERROR(STATUS_ERROR, "network not configured\n");
+      RETURN_STA_CMD_ERROR(staAssocResp, STATUS_ERROR,
+                           "network not configured\n");
     } else {
       // enable the network and disable all others
       sprintf(gCmdStr, "wpa_cli.sh -i %s select_network %d > %s", ifname,
@@ -207,12 +208,13 @@ int wfaStaAssociate(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 
   // check wpa_cli response
   if (!readLine(tmpfile, cmdResult, sizeof(cmdResult))) {
-    RETURN_STA_ASSOCIATE_ERROR(STATUS_ERROR, "unable to read command output\n");
+    RETURN_STA_CMD_ERROR(staAssocResp, STATUS_ERROR,
+                         "unable to read command output\n");
   }
 
   if (strcmp(cmdResult, "OK") != 0) {
-    RETURN_STA_ASSOCIATE_ERROR(
-        STATUS_ERROR, "associate network failed, error: %s\n", cmdResult);
+    RETURN_STA_CMD_ERROR(staAssocResp, STATUS_ERROR,
+                         "associate network failed, error: %s\n", cmdResult);
   }
 
   staAssocResp->status = STATUS_COMPLETE;
@@ -2583,16 +2585,72 @@ int wfaStaSetMacAddr(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 }
 
 int wfaStaDisconnect(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
-  //dutCommand_t *disc = (dutCommand_t *)caCmdBuf;
-  //char *intf = disc->intf;
+  dutCommand_t* cmd = (dutCommand_t*)caCmdBuf;
+  char* ifname = cmd->intf;
+  char string[64];
+  char* token;
+  FILE* tmpfd;
   dutCmdResponse_t* staDiscResp = &gGenericResp;
+  uint32_t networkId;
+  const char* tmpfile = "/tmp/.wfaStaDisconnectTmp";
 
-  // stop the supplicant
+  DPRINT_INFO(WFA_OUT, "Entering wfaStaDisconnect ...\n");
+  // Retrieve the network id.
+  sprintf(gCmdStr, "wpa_cli.sh status > %s", tmpfile);
+  sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
+                         "error getting wpa_supplicant status: %d\n", sret);
+  }
+
+  tmpfd = fopen(tmpfile, "r+");
+  if (tmpfd == NULL) {
+    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR, "temp file open failed\n");
+  }
+
+  networkId = -1;
+  for (;;) {
+    if (fgets(string, sizeof(string), tmpfd) == NULL) {
+      break;
+    }
+
+    if (strncmp(string, "id", 2) == 0) {
+      token = strtok(string, "=");
+      token = strtok(NULL, "=");
+      if (token != NULL) {
+        networkId = atoi(token);
+        break;
+      }
+    }
+  }
+  fclose(tmpfd);
+
+  if (networkId == -1) {
+    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR, "no network connected\n");
+  }
+
+  sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network %d > %s", ifname,
+          networkId, tmpfile);
+  sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
+                         "error disabling network: %d\n", sret);
+  }
+
+  if (!readLine(tmpfile, string, sizeof(string))) {
+    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
+                         "unable to read command output\n");
+  }
+
+  if (strcmp(string, "OK") != 0) {
+    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
+                         "disable network failed, error: %s\n", string);
+  }
 
   staDiscResp->status = STATUS_COMPLETE;
-
-  wfaEncodeTLV(WFA_STA_DISCONNECT_RESP_TLV, 4, (BYTE*)staDiscResp, respBuf);
-  *respLen = WFA_TLV_HDR_LEN + 4;
+  wfaEncodeTLV(WFA_STA_DISCONNECT_RESP_TLV, sizeof(dutCmdResponse_t),
+               (BYTE*)staDiscResp, respBuf);
+  *respLen = WFA_TLV_HDR_LEN + sizeof(dutCmdResponse_t);
 
   return WFA_SUCCESS;
 }
