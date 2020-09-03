@@ -19,17 +19,16 @@
 #ifndef WFA_AGTCTRL_H
 #define WFA_AGTCTRL_H
 
-typedef int (*commandStrProcFuncPtr)(char *, BYTE *, int *);
+typedef int (*commandStrProcFuncPtr)(char*, BYTE*, int*);
 
-typedef struct type_name_str_table
-{
-    int type;
-    char name[32];
-    commandStrProcFuncPtr cmdProcFunc;
+typedef struct type_name_str_table {
+  int type;
+  char name[32];
+  commandStrProcFuncPtr cmdProcFunc;
 } typeNameStr_t;
 
 extern int buildCommandProcessTable(void);
 
-typedef int (*dutCommandRespFuncPtr)(BYTE *cmdBuf);
+typedef int (*dutCommandRespFuncPtr)(BYTE* cmdBuf);
 
 #endif

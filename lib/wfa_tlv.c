@@ -39,16 +39,15 @@ extern unsigned short wfa_defined_debug;
  *
  * output: tlv_data - encoded TLV packet buffer. Caller must allocate the buffer
  */
-BOOL wfaEncodeTLV(WORD the_tag, WORD the_len, BYTE *the_value, BYTE *tlv_data)
-{
-    void *data = tlv_data;
+BOOL wfaEncodeTLV(WORD the_tag, WORD the_len, BYTE* the_value, BYTE* tlv_data) {
+  void* data = tlv_data;
 
-    ((wfaTLV *)data)->tag = the_tag;
-    ((wfaTLV *)data)->len = the_len;
-    if(the_value != NULL && the_len != 0)
-        wMEMCPY((data+4), (BYTE *)the_value, the_len);
+  ((wfaTLV*)data)->tag = the_tag;
+  ((wfaTLV*)data)->len = the_len;
+  if (the_value != NULL && the_len != 0)
+    wMEMCPY((data + 4), (BYTE*)the_value, the_len);
 
-    return WFA_SUCCESS;
+  return WFA_SUCCESS;
 }
 
 /*
@@ -60,33 +59,30 @@ BOOL wfaEncodeTLV(WORD the_tag, WORD the_len, BYTE *the_value, BYTE *tlv_data)
  *         pvalue - value buffer, caller must allocate the buffer
  */
 
-BOOL wfaDecodeTLV(BYTE *tlv_data, int tlv_len, WORD *ptag, int *pval_len, BYTE *pvalue)
-{
-    wfaTLV *data = (wfaTLV *)tlv_data;
+BOOL wfaDecodeTLV(
+    BYTE* tlv_data, int tlv_len, WORD* ptag, int* pval_len, BYTE* pvalue) {
+  wfaTLV* data = (wfaTLV*)tlv_data;
 
-    if(pvalue == NULL)
-    {
-        DPRINT_ERR(WFA_ERR, "Parm buf invalid\n");
-        return WFA_FAILURE;
-    }
-    *ptag = data->tag;
-    *pval_len = data->len;
+  if (pvalue == NULL) {
+    DPRINT_ERR(WFA_ERR, "Parm buf invalid\n");
+    return WFA_FAILURE;
+  }
+  *ptag = data->tag;
+  *pval_len = data->len;
 
-    if(tlv_len < *pval_len)
-        return WFA_FAILURE;
+  if (tlv_len < *pval_len)
+    return WFA_FAILURE;
 
-    if(*pval_len != 0)
-    {
-        if(*pval_len >= MAX_PARMS_BUFF)
-        {
-            DPRINT_ERR(WFA_ERR, "parameter buffer is too small\n");
-            return WFA_FAILURE;
-        }
-
-        wMEMCPY(pvalue, (tlv_data+4), *pval_len);
+  if (*pval_len != 0) {
+    if (*pval_len >= MAX_PARMS_BUFF) {
+      DPRINT_ERR(WFA_ERR, "parameter buffer is too small\n");
+      return WFA_FAILURE;
     }
 
-    return WFA_SUCCESS;
+    wMEMCPY(pvalue, (tlv_data + 4), *pval_len);
+  }
+
+  return WFA_SUCCESS;
 }
 
 /*
@@ -95,14 +91,13 @@ BOOL wfaDecodeTLV(BYTE *tlv_data, int tlv_len, WORD *ptag, int *pval_len, BYTE *
  * return: the TLV type.
  */
 
-WORD wfaGetTLVTag(BYTE *tlv_data)
-{
-    wfaTLV *ptlv = (wfaTLV *)tlv_data;
+WORD wfaGetTLVTag(BYTE* tlv_data) {
+  wfaTLV* ptlv = (wfaTLV*)tlv_data;
 
-    if(ptlv != NULL)
-        return ptlv->tag;
+  if (ptlv != NULL)
+    return ptlv->tag;
 
-    return WFA_SUCCESS;
+  return WFA_SUCCESS;
 }
 
 /*
@@ -111,16 +106,15 @@ WORD wfaGetTLVTag(BYTE *tlv_data)
  * Output: tlv_data - a TLV buffer, caller must allocate this buffer.
  */
 
-BOOL wfaSetTLVTag(WORD new_tag, BYTE *tlv_data)
-{
-    wfaTLV *ptlv = (wfaTLV *)tlv_data;
+BOOL wfaSetTLVTag(WORD new_tag, BYTE* tlv_data) {
+  wfaTLV* ptlv = (wfaTLV*)tlv_data;
 
-    if(tlv_data == NULL)
-        return WFA_FAILURE;
+  if (tlv_data == NULL)
+    return WFA_FAILURE;
 
-    ptlv->tag = new_tag;
+  ptlv->tag = new_tag;
 
-    return WFA_SUCCESS;
+  return WFA_SUCCESS;
 }
 
 /*
@@ -129,14 +123,13 @@ BOOL wfaSetTLVTag(WORD new_tag, BYTE *tlv_data)
  * return: the value length.
  */
 
-WORD wfaGetTLVLen(BYTE *tlv_data)
-{
-    wfaTLV *ptlv = (wfaTLV *)tlv_data;
+WORD wfaGetTLVLen(BYTE* tlv_data) {
+  wfaTLV* ptlv = (wfaTLV*)tlv_data;
 
-    if(tlv_data == NULL)
-        return WFA_FAILURE;
+  if (tlv_data == NULL)
+    return WFA_FAILURE;
 
-    return ptlv->len;
+  return ptlv->len;
 }
 
 /*
@@ -146,12 +139,11 @@ WORD wfaGetTLVLen(BYTE *tlv_data)
  * output: pvalue - the value buffer, caller must allocate it.
  */
 
-BOOL wfaGetTLVvalue(int value_len, BYTE *tlv_data, BYTE *pvalue)
-{
-    if(tlv_data == NULL)
-        return WFA_FAILURE;
+BOOL wfaGetTLVvalue(int value_len, BYTE* tlv_data, BYTE* pvalue) {
+  if (tlv_data == NULL)
+    return WFA_FAILURE;
 
-    wMEMCPY(pvalue, tlv_data+WFA_TLV_HEAD_LEN, value_len);
+  wMEMCPY(pvalue, tlv_data + WFA_TLV_HEAD_LEN, value_len);
 
-    return WFA_SUCCESS;
+  return WFA_SUCCESS;
 }

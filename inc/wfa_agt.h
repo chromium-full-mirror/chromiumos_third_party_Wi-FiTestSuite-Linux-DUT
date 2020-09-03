@@ -19,6 +19,9 @@
 #ifndef WFA_AGT_H
 #define WFA_AGT_H
 
-typedef int (*xcCommandFuncPtr)(int len, BYTE *parms, int *respLen, BYTE *respBuf);
+typedef int (*xcCommandFuncPtr)(int len,
+                                BYTE* parms,
+                                int* respLen,
+                                BYTE* respBuf);
 
 #endif

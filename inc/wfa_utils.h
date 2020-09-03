@@ -16,11 +16,9 @@
 *
 *****************************************************************************/
 
-
 #ifndef _WFA_UTILS_H
 #define _WFA_UTILS_H
 
-
-#define WFA_RET_ENV       "WFA_UTIL_RET"
+#define WFA_RET_ENV "WFA_UTIL_RET"
 
 #endif

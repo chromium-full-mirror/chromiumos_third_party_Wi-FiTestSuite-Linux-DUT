@@ -16,24 +16,23 @@
 *
 *****************************************************************************/
 
-
 #ifndef _WFA_MISCS_H_
 #define _WFA_MISCS_H_
 
-extern int isString(char *);
-extern int isNumber(char *);
-extern int isIpV4Addr(char *);
+extern int isString(char*);
+extern int isNumber(char*);
+extern int isIpV4Addr(char*);
 
-extern double wfa_timeval2double(struct timeval *tval);
-extern void wfa_double2timeval(struct timeval *tval, double dval);
-extern double wfa_ftime_diff(struct timeval *t1, struct timeval *t2);
-extern int wfa_itime_diff(struct timeval *t1, struct timeval *t2);
+extern double wfa_timeval2double(struct timeval* tval);
+extern void wfa_double2timeval(struct timeval* tval, double dval);
+extern double wfa_ftime_diff(struct timeval* t1, struct timeval* t2);
+extern int wfa_itime_diff(struct timeval* t1, struct timeval* t2);
 
 /*
  * The following two functions are converting Little Endian to Big Endian.
  * If your machine is already a Big Endian, you may flag it out.
  */
-extern void int2BuffBigEndian(int val, char *buf);
-extern int bigEndianBuff2Int(char *buff);
+extern void int2BuffBigEndian(int val, char* buf);
+extern int bigEndianBuff2Int(char* buff);
 
 #endif

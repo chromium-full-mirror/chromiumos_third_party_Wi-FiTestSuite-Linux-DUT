@@ -16,7 +16,6 @@
 *
 *****************************************************************************/
 
-
 /*
  * wfa_types.h:
  *   Defines general types and enum
@@ -27,9 +26,9 @@
 #define WFA_IF_NAME_LEN 16
 #define WFA_VERSION_LEN 32
 #define WFA_SSID_NAME_LEN 64
-#define WFA_IP_ADDR_STR_LEN  16
-#define WFA_IP_MASK_STR_LEN  16
-#define WFA_MAX_DNS_NUM      2
+#define WFA_IP_ADDR_STR_LEN 16
+#define WFA_IP_MASK_STR_LEN 16
+#define WFA_MAX_DNS_NUM 2
 #define WFA_MAC_ADDR_STR_LEN 18
 #define WFA_PROGNAME_LEN 8
 
@@ -37,62 +36,58 @@
 #define WFA_P2P_DEVID_LEN 18
 #define WFA_P2P_GRP_ID_LEN 128
 #define WFA_WPS_PIN_LEN 256
-#define WFA_PSK_PP_LEN	256
+#define WFA_PSK_PP_LEN 256
 
 #define WFA_WFD_SESSION_ID_LEN 64
-#define WFA_URL_STRING_LEN          256
+#define WFA_URL_STRING_LEN 256
 #define WFA_EVT_ACTION_LEN 8
 
-
-#define IF_80211   1
-#define IF_ETH     2
+#define IF_80211 1
+#define IF_ETH 2
 
 /* WMM-AC APSD defines*/
 #ifdef WFA_WMM_AC
-#define DIR_NONE  0
-#define DIR_UP    1
-#define DIR_DOWN  2
+#define DIR_NONE 0
+#define DIR_UP 1
+#define DIR_DOWN 2
 #define DIR_BIDIR 3
 #endif
 
 typedef unsigned short WORD;
 typedef unsigned char BYTE;
 
-enum _response_staus
-{
-    STATUS_RUNNING = 0x0001,
-    STATUS_INVALID = 0x0002,
-    STATUS_ERROR = 0x0003,
-    STATUS_COMPLETE = 0x0004,
+enum _response_staus {
+  STATUS_RUNNING = 0x0001,
+  STATUS_INVALID = 0x0002,
+  STATUS_ERROR = 0x0003,
+  STATUS_COMPLETE = 0x0004,
 };
 
 typedef int BOOL;
 
-#ifndef    TRUE
-#define    FALSE       -1
-#define    TRUE        0
-#define    DONE        1
+#ifndef TRUE
+#define FALSE -1
+#define TRUE 0
+#define DONE 1
 #endif
 
-typedef enum returnTypes
-{
-    WFA_SUCCESS = 0,
-    WFA_FAILURE = 1,
-    WFA_ERROR = -1,
+typedef enum returnTypes {
+  WFA_SUCCESS = 0,
+  WFA_FAILURE = 1,
+  WFA_ERROR = -1,
 } retType_t;
 
-enum wfa_state
-{
-    WFA_DISABLED = 0,
-    WFA_ENABLED = 1,
-    WFA_OPTIONAL = 1,
-    WFA_REQUIRED = 2,
-    WFA_F_REQUIRED = 3,            /* forced required */
-    WFA_F_DISABLED = 4,            /* forced disabled */
-    WFA_INVALID_BOOL = 0xFF
+enum wfa_state {
+  WFA_DISABLED = 0,
+  WFA_ENABLED = 1,
+  WFA_OPTIONAL = 1,
+  WFA_REQUIRED = 2,
+  WFA_F_REQUIRED = 3, /* forced required */
+  WFA_F_DISABLED = 4, /* forced disabled */
+  WFA_INVALID_BOOL = 0xFF
 };
 
-// Used to mark unused variable. 
+// Used to mark unused variable.
 #define WFA_UNUSED(x) (void)(x)
 
 #endif

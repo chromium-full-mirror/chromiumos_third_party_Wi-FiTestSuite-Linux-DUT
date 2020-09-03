@@ -16,29 +16,30 @@
 *
 *****************************************************************************/
 
-
 #ifndef WFA_DEBUG_H
 #define WFA_DEBUG_H
 
-#define WFA_ERR         stderr  /* error: can be redefined to a log file */
-#define WFA_OUT         stdout  /* info:  can be redefined to a log file */
-#define WFA_WNG         stdout  /* warning: can be redefined to a log file */
+#define WFA_ERR stderr /* error: can be redefined to a log file */
+#define WFA_OUT stdout /* info:  can be redefined to a log file */
+#define WFA_WNG stdout /* warning: can be redefined to a log file */
 
-#define WFA_DEBUG_DEFAULT          0x0001
-#define WFA_DEBUG_ERR              0x0001
-#define WFA_DEBUG_INFO             0x0002
-#define WFA_DEBUG_WARNING          0x0004
+#define WFA_DEBUG_DEFAULT 0x0001
+#define WFA_DEBUG_ERR 0x0001
+#define WFA_DEBUG_INFO 0x0002
+#define WFA_DEBUG_WARNING 0x0004
 
 #define WFA_DEBUG 1
 
-#define DPRINT_ERR      fprintf(WFA_ERR, "File %s, Line %ld: ", \
-                               __FILE__, (long)__LINE__); \
-                        fprintf
+#define DPRINT_ERR                                                   \
+  fprintf(WFA_ERR, "File %s, Line %ld: ", __FILE__, (long)__LINE__); \
+  fprintf
 
-#define DPRINT_INFO     if(wfa_defined_debug & WFA_DEBUG_INFO) \
-                            fprintf
+#define DPRINT_INFO                       \
+  if (wfa_defined_debug & WFA_DEBUG_INFO) \
+  fprintf
 
-#define DPRINT_WARNING  if(wfa_defined_debug & WFA_DEBUG_WARNING) \
-                            fprintf
+#define DPRINT_WARNING                       \
+  if (wfa_defined_debug & WFA_DEBUG_WARNING) \
+  fprintf
 
 #endif

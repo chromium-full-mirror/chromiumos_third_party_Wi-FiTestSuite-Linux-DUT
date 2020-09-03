@@ -21,7 +21,6 @@
 *
 */
 
-
 #define MAX_THREAD 10
 
 /* Control Agent binary name */
@@ -30,17 +29,15 @@
 /* WFA DUT binary name */
 #define WFA_DUT "/usr/bin/wfa_dut"
 
-void* startControlAgent(void *commandLine);
-void *startTG(void *commandLine);
-void wfa_print( char *fmt, ... );
-int getParameterValue(char *source,const char *Parameter, char *Value);
-int isLineComment (char *Line);
+void* startControlAgent(void* commandLine);
+void* startTG(void* commandLine);
+void wfa_print(char* fmt, ...);
+int getParameterValue(char* source, const char* Parameter, char* Value);
+int isLineComment(char* Line);
 
-
-struct WTG_Thread
-{
-    pthread_t thr;
-    pthread_attr_t attr;
-    int thread_id;
-    char command[256];
+struct WTG_Thread {
+  pthread_t thr;
+  pthread_attr_t attr;
+  int thread_id;
+  char command[256];
 };
