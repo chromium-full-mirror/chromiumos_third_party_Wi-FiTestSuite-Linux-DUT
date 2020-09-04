@@ -2076,13 +2076,14 @@ int wfaStaSetSystime(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 
   DPRINT_INFO(WFA_OUT, "Entering wfaStaSetSystime ...\n");
 
-  sprintf(gCmdStr, "date %d-%d-%d", systime->month, systime->date,
-          systime->year);
-  sret = systemWithLog(gCmdStr);
-
-  sprintf(gCmdStr, "time %d:%d:%d", systime->hours, systime->minutes,
+  sprintf(gCmdStr, "date %02d%02d%02d%02d%04d.%02d", systime->month,
+          systime->date, systime->hours, systime->minutes, systime->year,
           systime->seconds);
   sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(setSystimeResp, STATUS_ERROR,
+                         "error running date command, exit code: %d\n", sret);
+  }
 
   setSystimeResp->status = STATUS_COMPLETE;
   wfaEncodeTLV(WFA_STA_SET_SYSTIME_RESP_TLV, 4, (BYTE*)setSystimeResp, respBuf);
