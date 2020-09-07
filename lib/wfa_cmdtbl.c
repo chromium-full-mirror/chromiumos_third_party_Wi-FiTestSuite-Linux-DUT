@@ -93,31 +93,27 @@ xcCommandFuncPtr gWfaCmdFuncTbl[WFA_STA_COMMANDS_END] = {
     wfaStaReAssociate,        /*    WFA_STA_REASSOCIATE                (34)*/
     wfaStaSetPwrSave,         /*    WFA_STA_SET_PWRSAVE                (35)*/
 #ifdef WFA_STA_TB
-    wfaStaSendNeigReq,  /*    WFA_STA_SEND_NEIGREQ               (36)*/
-    wfaStaPresetParams, /*    WFA_STA_PRESET_PARAMETERS          (37)*/
+    wfaStaSendNeigReq, /*    WFA_STA_SEND_NEIGREQ                      (36)*/
 #else
-    wfaStaTestBedCmd, /*    WFA_STA_SEND_NEIGREQ               (36)*/
-    wfaStaTestBedCmd, /*    WFA_STA_PRESET_PARAMETERS          (37)*/
+    wfaStaTestBedCmd, /*    WFA_STA_SEND_NEIGREQ                       (36)*/
 #endif
-    wfaStaSetEapFAST, /*    WFA_STA_SET_EAPFAST_TLV	       (38)*/
-    wfaStaSetEapAKA,  /*    WFA_STA_SET_EAPAKA_TLV             (49)*/
-    wfaStaSetSystime, /*    WFA_STA_SET_SYSTIME_TLV	       (40)*/
+    wfaStaPresetParams, /*    WFA_STA_PRESET_PARAMETERS                (37)*/
+    wfaStaSetEapFAST,   /*    WFA_STA_SET_EAPFAST_TLV                  (38)*/
+    wfaStaSetEapAKA,    /*    WFA_STA_SET_EAPAKA_TLV                   (49)*/
+    wfaStaSetSystime,   /*    WFA_STA_SET_SYSTIME_TLV                  (40)*/
+    wfaStaSet11n,       /*    WFA_STA_SET_11n_TLV                      (41)*/
+    wfaStaSetWireless,  /*    WFA_STA_SET_WIRELESS_TLV                 (42)*/
+    wfaStaSendADDBA,    /*    WFA_STA_SEND_ADDBA_TLV                   (43)*/
 #ifdef WFA_STA_TB
-    wfaStaSet11n,          /*    WFA_STA_SET_11n_TLV	    	       (41)*/
-    wfaStaSetWireless,     /*    WFA_STA_SET_WIRELESS_TLV	       (42)*/
-    wfaStaSendADDBA,       /*    WFA_STA_SEND_ADDBA_TLV	       (43)*/
-    wfaStaSendCoExistMGMT, /*    WFA_STA_SET_COEXIST_MGMT_TLV       (44)*/
+    wfaStaSendCoExistMGMT, /*    WFA_STA_SET_COEXIST_MGMT_TLV          (44)*/
 #else
-    wfaStaTestBedCmd, /*    WFA_STA_SET_11n_TLV	    	       (41)*/
-    wfaStaTestBedCmd, /*    WFA_STA_SET_WIRELESS_TLV	       (42)*/
-    wfaStaTestBedCmd, /*    WFA_STA_SEND_ADDBA_TLV	       (43)*/
-    wfaStaTestBedCmd, /*    WFA_STA_SET_COEXIST_MGMT_TLV       (44)*/
+    wfaStaTestBedCmd, /*    WFA_STA_SET_COEXIST_MGMT_TLV               (44)*/
 #endif
-    wfaStaSetRIFS, /*    WFA_STA_SET_RIFS_TEST_TLV          (45)*/
+    wfaStaSetRIFS, /*    WFA_STA_SET_RIFS_TEST_TLV                     (45)*/
 #ifdef WFA_STA_TB
-    wfaStaResetDefault, /*    WFA_STA_RESET_DEFAULT_TLV          (46)*/
+    wfaStaResetDefault, /*    WFA_STA_RESET_DEFAULT_TLV                (46)*/
 #else
-    wfaStaTestBedCmd, /*    WFA_STA_RESET_DEFAULT_TLV          (46)*/
+    wfaStaTestBedCmd, /*    WFA_STA_RESET_DEFAULT_TLV                  (46)*/
 #endif
     wfaStaDisconnect,       /*    WFA_STA_DISCONNECT_TLV             (47)*/
     wfaStaDevSendFrame,     /*    WFA_STA_DEV_SEND_FRAME_TLV              (48)*/

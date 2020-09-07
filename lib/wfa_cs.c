@@ -3263,9 +3263,8 @@ int wfaStaSetOpportunisticPsReq(int len,
 int wfaStaPresetParams(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   dutCmdResponse_t infoResp;
 
-  DPRINT_INFO(WFA_OUT, "Inside wfaStaPresetParameters function ...\n");
+  DPRINT_INFO(WFA_WNG, "command sta_preset_testparameters will be ignored\n");
 
-  // Implement the function and its sub commands
   infoResp.status = STATUS_COMPLETE;
 
   wfaEncodeTLV(WFA_STA_PRESET_PARAMETERS_RESP_TLV, 4, (BYTE*)&infoResp,
@@ -3277,6 +3276,8 @@ int wfaStaPresetParams(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 int wfaStaSet11n(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   dutCmdResponse_t infoResp;
   dutCmdResponse_t* v11nParamsResp = &infoResp;
+
+  DPRINT_INFO(WFA_WNG, "command sta_set_11n will be ignored\n");
 
 #ifdef WFA_11N_SUPPORT_ONLY
 
@@ -3494,6 +3495,31 @@ int wfaStaSet11n(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   *respLen = WFA_TLV_HDR_LEN + 4;
   return WFA_SUCCESS;
 }
+
+int wfaStaSetWireless(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
+  dutCmdResponse_t* staWirelessResp = &gGenericResp;
+
+  DPRINT_INFO(WFA_WNG, "command sta_set_wireless will be ignored\n");
+
+  staWirelessResp->status = STATUS_COMPLETE;
+  wfaEncodeTLV(WFA_STA_SET_WIRELESS_RESP_TLV, 4, (BYTE*)staWirelessResp,
+               respBuf);
+  *respLen = WFA_TLV_HDR_LEN + 4;
+  return WFA_SUCCESS;
+}
+
+int wfaStaSendADDBA(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
+  dutCmdResponse_t* staSendADDBAResp = &gGenericResp;
+
+  DPRINT_INFO(WFA_WNG, "command sta_send_addba will be ignored\n");
+
+  staSendADDBAResp->status = STATUS_COMPLETE;
+  wfaEncodeTLV(WFA_STA_SET_SEND_ADDBA_RESP_TLV, 4, (BYTE*)staSendADDBAResp,
+               respBuf);
+  *respLen = WFA_TLV_HDR_LEN + 4;
+  return WFA_SUCCESS;
+}
+
 #endif
 /*
  * wfaStaAddArpTableEntry():

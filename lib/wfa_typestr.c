@@ -175,19 +175,19 @@ typeNameStr_t nameStr[] = {
     {WFA_STA_REASSOCIATE_TLV, "sta_reassociate", xcCmdProcStaReAssociate},
     {WFA_STA_DEV_SEND_FRAME_TLV, "dev_send_frame", xcCmdProcStaDevSendFrame},
     {WFA_STA_SET_SECURITY_TLV, "sta_set_security", xcCmdProcStaSetSecurity},
-#ifdef WFA_STA_TB
     {WFA_STA_PRESET_PARAMETERS_TLV, "sta_preset_testparameters",
      xcCmdProcStaPresetTestParameters},
-#endif
     {WFA_STA_SET_EAPFAST_TLV, "sta_set_eapfast", xcCmdProcStaSetEapFAST},
     {WFA_STA_SET_EAPAKA_TLV, "sta_set_eapaka", xcCmdProcStaSetEapAKA},
     {WFA_STA_SET_SYSTIME_TLV, "sta_set_systime", xcCmdProcStaSetSystime},
     {WFA_STA_SET_PWRSAVE_TLV, "sta_set_pwrsave", xcCmdProcStaSetPwrSave},
 #ifdef WFA_STA_TB
     {WFA_STA_RESET_DEFAULT_TLV, "sta_reset_default", xcCmdProcStaResetDefault},
+#endif
     {WFA_STA_SET_11N_TLV, "sta_set_11n", xcCmdProcStaSet11n},
     {WFA_STA_SET_WIRELESS_TLV, "sta_set_wireless", xcCmdProcStaSetWireless},
     {WFA_STA_SEND_ADDBA_TLV, "sta_send_addba", xcCmdProcStaSendADDBA},
+#ifdef WFA_STA_TB
     {WFA_STA_SEND_COEXIST_MGMT_TLV, "sta_send_coexist_mgmt",
      xcCmdProcStaSendCoExistMGMT},
 #endif
