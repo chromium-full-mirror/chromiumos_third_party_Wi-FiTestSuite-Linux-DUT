@@ -1091,9 +1091,9 @@ int wfaStaGetInfo(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
            "interface,%s,description,%s", getInfo->intf, vendor);
 
   infoResp.status = STATUS_COMPLETE;
-  wfaEncodeTLV(WFA_STA_GET_INFO_RESP_TLV, sizeof(infoResp.status),
+  wfaEncodeTLV(WFA_STA_GET_INFO_RESP_TLV, sizeof(dutCmdResponse_t),
                (BYTE*)&infoResp, respBuf);
-  *respLen = WFA_TLV_HDR_LEN + sizeof(infoResp.status);
+  *respLen = WFA_TLV_HDR_LEN + sizeof(dutCmdResponse_t);
 
   fclose(tmpfd);
   remove(vendorFileName);
