@@ -1,13 +1,14 @@
-The folder contains scripts for installing the Wi-Fi Alliance's Certification
-Test Suite's Linux DUT controller software to DUT and a script to start / stop
-the DUT controller remotely.
+The folder contains scripts for packaging and installing the Wi-Fi Alliance's
+Certification Test Suite's Linux DUT controller software to DUT and a script to
+start / stop the DUT controller remotely.
 
-Usage:
-* Install: ./install.sh $DUT_HOST
-* Run: ./wfa_ca_dut.sh start $DUT_HOST
-* Stop: ./wfa_ca_dut.sh stop $DUT_HOST
+Usage (under Wi-FiTestSuite-Linux-DUT repo):
+* Package: deploy/package.sh $path_testing_rsa
+* Install: deploy/install.sh $DUT_HOST
+* Run:     deploy/wfa_ca_dut.sh start $DUT_HOST
+* Stop:    deploy/wfa_ca_dut.sh stop $DUT_HOST
 
 Note that the SSH identity file used to connect to the DUT is not included.
 The file, testing_rsa, can be found in
 https://chromium.googlesource.com/chromiumos/chromite/+/master/ssh_keys#
-and be placed in deploy folder with permission 600.
+Please download it and provide it to package.sh.
