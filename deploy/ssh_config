@@ -1,0 +1,10 @@
+Host *
+     ProxyCommand none
+     User root
+     UserKnownHostsFile /dev/null
+     StrictHostKeyChecking no
+     LogLevel error
+
+# Note that IdentityFile is specified via -i argumenet because the path is
+# determined by the running environment (workstation or DUT).
+#     IdentityFile ~/.ssh/testing_rsa
