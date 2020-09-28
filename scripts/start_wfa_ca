@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Starts wfa_ca on default port and bind to default wfa_dut server.
+
+DUT_IP=$( ifconfig eth0 | grep "inet " | awk '{ print $2 }' )
+WFA_DIR=/usr/local/bin/wfa
+
+echo "Starting wfa_ca on $DUT_IP:8888"
+
+# Append $WFA_DIR to $PATH so that wfa_ca can run the scripts in it.
+PATH="$PATH:$WFA_DIR" $WFA_DIR/wfa_ca eth0 8888 $DUT_IP 9999 &

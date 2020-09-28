@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Stops wfa_ca and wfa_dut servers.
+
+echo "kill wfa_ca & wfa_dut"
+killall wfa_ca
+killall wfa_dut
