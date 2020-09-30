@@ -533,14 +533,15 @@ int wfaStaSetIpConfig(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   if (sret != 0) {
     DPRINT_INFO(WFA_OUT, "exit code %d backing up resolv.conf\n", sret);
   }
-  sprintf(gCmdStr, "echo nameserv %s > /etc/resolv.conf", ipconfig->pri_dns);
+  sprintf(gCmdStr, "echo nameserver %s > /etc/resolv.conf", ipconfig->pri_dns);
   DPRINT_INFO(WFA_OUT, "exec: %s\n", gCmdStr);
   sret = systemWithLog(gCmdStr);
   if (sret != 0) {
     DPRINT_INFO(WFA_OUT, "exit code %d writing resolv.conf\n", sret);
   }
   if (strlen(ipconfig->sec_dns) > 0) {
-    sprintf(gCmdStr, "echo nameserv %s >> /etc/resolv.conf", ipconfig->sec_dns);
+    sprintf(gCmdStr, "echo nameserver %s >> /etc/resolv.conf",
+            ipconfig->sec_dns);
     DPRINT_INFO(WFA_OUT, "exec: %s\n", gCmdStr);
     sret = systemWithLog(gCmdStr);
     if (sret != 0) {
