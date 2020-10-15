@@ -2720,26 +2720,26 @@ int wfaStaDisconnect(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   }
   fclose(tmpfd);
 
-  if (networkId == -1) {
-    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR, "no network connected\n");
-  }
+  if (networkId != -1) {
+    sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network %d > %s", ifname,
+            networkId, tmpfile);
+    sret = systemWithLog(gCmdStr);
+    if (sret != 0) {
+      RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
+                           "error disabling network: %d\n", sret);
+    }
 
-  sprintf(gCmdStr, "wpa_cli.sh -i %s disable_network %d > %s", ifname,
-          networkId, tmpfile);
-  sret = systemWithLog(gCmdStr);
-  if (sret != 0) {
-    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
-                         "error disabling network: %d\n", sret);
-  }
+    if (!readLine(tmpfile, string, sizeof(string))) {
+      RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
+                           "unable to read command output\n");
+    }
 
-  if (!readLine(tmpfile, string, sizeof(string))) {
-    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
-                         "unable to read command output\n");
-  }
-
-  if (strcmp(string, "OK") != 0) {
-    RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
-                         "disable network failed, error: %s\n", string);
+    if (strcmp(string, "OK") != 0) {
+      RETURN_STA_CMD_ERROR(staDiscResp, STATUS_ERROR,
+                           "disable network failed, error: %s\n", string);
+    }
+  } else {
+    DPRINT_INFO(WFA_OUT, "No network connected\n");
   }
 
   staDiscResp->status = STATUS_COMPLETE;
