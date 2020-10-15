@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Ask shill to gain control of WiFi devices.
+
+propStr=$( gdbus call --system --dest org.chromium.flimflam --object-path / \
+  --method org.chromium.flimflam.Manager.GetProperties | \
+  sed -n -e "s/^.*'ProhibitedTechnologies': <'\(\(\w\|,\)*\)'>.*$/\1/p" )
+echo "Got ProhibitedTechnologies: ${propStr}"
+
+props=(${propStr//,/ })
+if [[ ! " ${props[@]} " =~ " wifi " ]]; then
+  echo "wifi is not prohibited."
+  exit
+fi
+
+propStr=""
+for prop in "${props[@]}"; do
+  if [ "$prop" != "wifi" ]; then
+      propStr="${propStr},${prop}"
+  fi
+done
+propStr=${propStr%,}
+
+echo "Setting ProhibitedTechnologies by removing wifi: $propStr"
+gdbus call --system --dest org.chromium.flimflam --object-path / \
+  --method org.chromium.flimflam.Manager.SetProperty \
+  ProhibitedTechnologies \'${propStr}\'
+
+echo "EnableTechnology wifi"
+gdbus call --system --dest org.chromium.flimflam --object-path / \
+  --method org.chromium.flimflam.Manager.EnableTechnology wifi

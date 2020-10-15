@@ -2,6 +2,11 @@
 #
 # Stops wfa_ca and wfa_dut servers.
 
+WFA_DIR=/usr/local/bin/wfa
+
 echo "kill wfa_ca & wfa_dut"
 killall wfa_ca
 killall wfa_dut
+
+echo "shill: managing WiFi devices"
+$WFA_DIR/shill_enable_wifi

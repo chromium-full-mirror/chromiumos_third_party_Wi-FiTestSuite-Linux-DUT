@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Ask shill to give up control of WiFi devices.
+
+propStr=$( gdbus call --system --dest org.chromium.flimflam --object-path / \
+  --method org.chromium.flimflam.Manager.GetProperties | \
+  sed -n -e "s/^.*'ProhibitedTechnologies': <'\(\(\w\|,\)*\)'>.*$/\1/p" )
+echo "Got ProhibitedTechnologies: ${propStr}"
+
+props=(${propStr//,/ })
+if [[ " ${props[@]} " =~ " wifi " ]]; then
+  echo "wifi is already prohibited."
+  exit
+fi
+
+if [ -z "$propStr" ]; then
+  propStr="wifi"
+else
+  propStr="${propStr},wifi"
+fi
+
+echo "Setting ProhibitedTechnologies: ${propStr}"
+gdbus call --system --dest org.chromium.flimflam --object-path / \
+  --method org.chromium.flimflam.Manager.SetProperty \
+  ProhibitedTechnologies $propStr
+
+ip link set wlan0 up
+
+echo "Create interface wlan0 in wpa_supplicant for wpa_cli to work properly."
+gdbus call --system --dest fi.w1.wpa_supplicant1 --object-path \
+  /fi/w1/wpa_supplicant1 --method fi.w1.wpa_supplicant1.CreateInterface \
+  "{'ConfigFile': <'/usr/lib64/shill/shims/wpa_supplicant.conf'>, \
+    'Driver': <'nl80211'>, 'Ifname': <'wlan0'>}"
