@@ -4535,6 +4535,29 @@ int xcCmdProcStaSetWireless(char* pcmdStr, BYTE* aBuf, int* aLen) {
         // process addba_reject, ampdu, amsdu, stbc_rx, width, smps, txsp_stream, rxsp_stream, band, DYN_BW_SGNL
         // SGI80, TXBF, LDPC, Opt_md_notif_ie, nss_mcs_cap, tx_lgi_rate, zero_crc, vht_tkip, vht_wep, bw_sgnl
       }
+    } else if (strcasecmp(str, "ldpc") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      staWirelessParams->ldpc = strcasecmp(str, "enable") == 0;
+      staWirelessParams->ldpc_flag =
+          staWirelessParams->ldpc || strcasecmp(str, "disable") == 0;
+    } else if (strcasecmp(str, "bcc") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      staWirelessParams->bcc = strcasecmp(str, "enable") == 0;
+      staWirelessParams->bcc_flag =
+          staWirelessParams->bcc || strcasecmp(str, "disable") == 0;
+    } else if (strcasecmp(str, "addbareq_bufsize") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      strncpy(staWirelessParams->addbareq_bufsize, str,
+              sizeof(staWirelessParams->addbareq_bufsize) - 1);
+    } else if (strcasecmp(str, "addbaresp_bufsize") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      strncpy(staWirelessParams->addbaresp_bufsize, str,
+              sizeof(staWirelessParams->addbaresp_bufsize) - 1);
+    } else if (strcasecmp(str, "omcontrol") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      staWirelessParams->omcontrol = strcasecmp(str, "enable") == 0;
+      staWirelessParams->omcontrol_flag =
+          staWirelessParams->omcontrol || strcasecmp(str, "disable") == 0;
     }
   }
 

@@ -1268,6 +1268,14 @@ typedef struct ca_sta_set_wireless {
 #define NOACK_VI 2
 #define NOACK_VO 3
   unsigned char noAck[4];
+  BYTE ldpc;
+  BYTE ldpc_flag;
+  BYTE bcc;
+  BYTE bcc_flag;
+  char addbareq_bufsize[8];
+  char addbaresp_bufsize[8];
+  BYTE omcontrol;
+  BYTE omcontrol_flag;
 } caStaSetWireless_t;
 
 typedef struct ca_sta_send_addba {

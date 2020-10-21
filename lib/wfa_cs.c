@@ -63,10 +63,21 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define CERTIFICATES_PATH "/etc/wpa_supplicant"
 
+#ifdef IWLWIFI
+const char* iwlDbgConfPath = "/lib/firmware/iwl-dbg-cfg.ini";
+const char* iwlDbgConfBakPath = "/tmp/iwl-dbg-cfg.ini.bak";
+#endif
+
 /* Some device may only support UDP ECHO, activate this line */
 //#define WFA_PING_UDP_ECHO_ONLY 1
 
 #define WFA_ENABLED 1
+
+#ifdef IWLWIFI
+#define HE_PHY_CAP_DWORD0_LDPC_CODE_IN_PAYLOAD_POS (13)
+#define HE_MAC_CAP_DWORD0_HTC_SUPPORT_POS (0)
+#define HE_MAC_CAP_DWORD0_OM_CONTROL_SUPPORT_POS (25)
+#endif
 
 extern unsigned short wfa_defined_debug;
 int wfaExecuteCLI(char* CLI);
@@ -87,6 +98,10 @@ struct ChannelPrefSet {
   struct ChannelPrefSet* next;
 };
 static struct ChannelPrefSet* channelPrefSet = NULL;
+
+#ifdef IWLWIFI
+char iwlwifiOptions[256];
+#endif
 
 int sret = 0;
 
@@ -177,6 +192,28 @@ int applyChannelPrefs(const char* ifname,
 
   return WFA_SUCCESS;
 }
+
+int resetDriverConfigToDefault(dutCmdResponse_t* resp,
+                               int* respLen,
+                               BYTE* respBuf) {
+#ifdef IWLWIFI
+  FILE* file = fopen(iwlDbgConfBakPath, "r");
+  if (!file) {
+    return WFA_SUCCESS;
+  }
+  fclose(file);
+
+  sprintf(gCmdStr, "sudo mv %s %s", iwlDbgConfBakPath, iwlDbgConfPath);
+  sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(
+        resp, STATUS_ERROR,
+        "error restoring iwl-dbg-cfg.ini from backup, exit code: %d\n", sret);
+  }
+#endif
+  return WFA_SUCCESS;
+}
+
 /*
  * agtCmdProcGetVersion(): response "ca_get_version" command to controller
  *  input:  cmd --- not used
@@ -2525,7 +2562,15 @@ int wfaStaResetDefault(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 
   selectedProgram = reset->program;
 
+  sret = resetDriverConfigToDefault(ResetResp, respLen, respBuf);
+  if (sret != WFA_SUCCESS) {
+    return sret;
+  }
+
 #ifdef IWLWIFI
+  iwlwifiOptions[0] = 0;
+
+  // restart iwlwifi with default options.
   sret = systemWithLog("apply_iwlwifi_options.sh");
   if (sret != 0) {
     RETURN_STA_CMD_ERROR(ResetResp, STATUS_ERROR,
@@ -3435,6 +3480,13 @@ int wfaStaPresetParams(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
     selectedProgram = presetParams->program;
   }
 
+  if (selectedProgram == PROG_TYPE_11N) {
+    sret = resetDriverConfigToDefault(presetParamsResp, respLen, respBuf);
+    if (sret != WFA_SUCCESS) {
+      return sret;
+    }
+  }
+
   if (presetParams->modeFlag != 0) {
     switch (presetParams->wirelessMode) {
       case eModeA:
@@ -3460,10 +3512,9 @@ int wfaStaPresetParams(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   }
 
 #ifdef IWLWIFI
-  sprintf(
-      gCmdStr,
-      "apply_iwlwifi_options.sh 11n_disable=%d disable_11ac=%d disable_11ax=%d",
-      disable11n, disable11ac, disable11ax);
+  sprintf(iwlwifiOptions, "11n_disable=%d disable_11ac=%d disable_11ax=%d",
+          disable11n, disable11ac, disable11ax);
+  sprintf(gCmdStr, "apply_iwlwifi_options.sh %s", iwlwifiOptions);
   sret = systemWithLog(gCmdStr);
   if (sret != 0) {
     RETURN_STA_CMD_ERROR(presetParamsResp, STATUS_ERROR,
@@ -3743,9 +3794,83 @@ int wfaStaSet11n(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 }
 
 int wfaStaSetWireless(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
+  caStaSetWireless_t* setParams = (caStaSetWireless_t*)caCmdBuf;
   dutCmdResponse_t* staWirelessResp = &gGenericResp;
 
-  DPRINT_INFO(WFA_WNG, "command sta_set_wireless will be ignored\n");
+  DPRINT_INFO(WFA_OUT, "Inside wfaStaSetWireless function....\n");
+
+#ifdef IWLWIFI
+  char cfgText[256] = "\n";
+  uint64_t hePhyCap[2] = {0x0e3f02, 0x00fd09800ecff200};
+
+  // ending 0 in case strncat gets to the buffer end
+  cfgText[sizeof(cfgText) - 1] = '\0';
+
+  if (setParams->bcc_flag && setParams->bcc) {
+    hePhyCap[1] &= ~(1ULL << HE_PHY_CAP_DWORD0_LDPC_CODE_IN_PAYLOAD_POS);
+    strncat(cfgText, "no_ldpc=1\n", sizeof(cfgText) - strlen(cfgText) - 1);
+  } else if (setParams->ldpc_flag && setParams->ldpc) {
+    hePhyCap[1] |= 1ULL << HE_PHY_CAP_DWORD0_LDPC_CODE_IN_PAYLOAD_POS;
+    strncat(cfgText, "no_ldpc=0\n", sizeof(cfgText) - strlen(cfgText) - 1);
+  }
+
+  if (strcasecmp(setParams->addbareq_bufsize, "gt64") == 0) {
+    strncat(cfgText, "ampdu_limit=256\n",
+            sizeof(cfgText) - strlen(cfgText) - 1);
+  }
+  if (strcasecmp(setParams->addbaresp_bufsize, "gt64") == 0) {
+    strncat(cfgText, "rx_agg_subframes=256\n",
+            sizeof(cfgText) - strlen(cfgText) - 1);
+  }
+
+  if (setParams->omcontrol_flag) {
+    if (setParams->omcontrol) {
+      hePhyCap[1] |= (1ULL << HE_MAC_CAP_DWORD0_HTC_SUPPORT_POS) |
+                     (1ULL << HE_MAC_CAP_DWORD0_OM_CONTROL_SUPPORT_POS);
+    } else {
+      hePhyCap[1] &= ~((1ULL << HE_MAC_CAP_DWORD0_HTC_SUPPORT_POS) |
+                       (1ULL << HE_MAC_CAP_DWORD0_OM_CONTROL_SUPPORT_POS));
+    }
+  }
+
+  snprintf(cfgText + strlen(cfgText), sizeof(cfgText) - strlen(cfgText) - 1,
+           "he_phy_cap=%06lx%08lx\n", hePhyCap[0], hePhyCap[1]);
+
+  sret = resetDriverConfigToDefault(staWirelessResp, respLen, respBuf);
+  if (sret != WFA_SUCCESS) {
+    return sret;
+  }
+
+  sprintf(gCmdStr, "sudo cp %s %s", iwlDbgConfPath, iwlDbgConfBakPath);
+  sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(staWirelessResp, STATUS_ERROR,
+                         "error backing up iwl-dbg-cfg.ini, exit code: %d\n",
+                         sret);
+  }
+
+  FILE* file = fopen(iwlDbgConfPath, "a+");
+  if (file == NULL) {
+    RETURN_STA_CMD_ERROR(staWirelessResp, STATUS_ERROR,
+                         "error opening iwl-dbg-cfg.ini for write, "
+                         "disable rootfs verification\n");
+  }
+  if (fputs(cfgText, file) == EOF) {
+    fclose(file);
+    RETURN_STA_CMD_ERROR(staWirelessResp, STATUS_ERROR,
+                         "error writing to iwl-dbg-cfg.ini\n");
+  }
+  fclose(file);
+
+  // restart iwlwifi with options
+  sprintf(gCmdStr, "apply_iwlwifi_options.sh %s", iwlwifiOptions);
+  sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(staWirelessResp, STATUS_ERROR,
+                         "error running apply_iwlwifi_options, exit code: %d\n",
+                         sret);
+  }
+#endif  // IWLWIFI
 
   staWirelessResp->status = STATUS_COMPLETE;
   wfaEncodeTLV(WFA_STA_SET_WIRELESS_RESP_TLV, 4, (BYTE*)staWirelessResp,
