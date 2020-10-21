@@ -1197,7 +1197,7 @@ int wfaStaGetInfo(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   dutCmdResponse_t infoResp;
   dutCommand_t* getInfo = (dutCommand_t*)caCmdBuf;
   FILE* tmpfd;
-  char vendor[256];
+  char vendor[80];
   const char* vendorFileName = "/tmp/ifvendor.txt";
 
   sprintf(gCmdStr, "getifvendor.sh %s %s\n", getInfo->intf, vendorFileName);
@@ -1215,7 +1215,7 @@ int wfaStaGetInfo(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   /* open the output result and scan/retrieve the info */
   tmpfd = fopen(vendorFileName, "r+");
 
-  if (tmpfd == NULL || fgets(vendor, 256, tmpfd) == NULL) {
+  if (tmpfd == NULL || fgets(vendor, sizeof(vendor), tmpfd) == NULL) {
     infoResp.status = STATUS_ERROR;
     wfaEncodeTLV(WFA_STA_GET_INFO_RESP_TLV, sizeof(infoResp.status),
                  (BYTE*)&infoResp, respBuf);
