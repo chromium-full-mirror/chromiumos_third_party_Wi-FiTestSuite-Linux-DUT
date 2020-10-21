@@ -213,6 +213,10 @@ enum {
   PMF_TYPE_REASSOCREQ,
 };
 
+enum { MBO_TYPE_WNMNOTIFY = 1 };
+
+enum { HE_TYPE_WNMNOTIFY = 1 };
+
 enum {
   PMF_PROT_CORRECTKEY = 1,
   PMF_PROT_INCORRECTKEY,
@@ -393,7 +397,16 @@ typedef struct loc_frame {
   char baskForPublicIdentifierURI_FQDN;
 } locFrame_t;
 
-enum {
+typedef struct mbo_frame {
+  BYTE eframe;
+} mboFrame_t;
+
+typedef struct he_frame {
+  BYTE eframe;
+} heFrame_t;
+
+enum ProgramType {
+  PROG_TYPE_NONE,
   PROG_TYPE_GEN = 1,
   PROG_TYPE_PMF,
   PROG_TYPE_TDLS,
@@ -404,6 +417,10 @@ enum {
   PROG_TYPE_HS2_R2,
   PROG_TYPE_NAN,
   PROG_TYPE_LOC,
+  PROG_TYPE_11N,
+  PROG_TYPE_HE,
+  PROG_TYPE_MBO,
+  PROG_UNSUPPORTED,
 };
 
 typedef struct ca_sta_dev_sendframe {
@@ -415,6 +432,8 @@ typedef struct ca_sta_dev_sendframe {
     wfdFrame_t wfd;
     hs2Frame_t hs2_r2;
     locFrame_t loc;
+    mboFrame_t mbo;
+    heFrame_t he;
   } frameType;
 } caStaDevSendFrame_t;
 
@@ -1010,6 +1029,7 @@ typedef enum wfa_WirelessMode {
   eModeGN,
   eModeNL,
   eModeAC,
+  eModeAX,
 } wfaWirelessMode;
 
 typedef enum wfa_reset_prog {
@@ -1132,7 +1152,6 @@ typedef struct ca_sta_preset_parameters {
   char intf[WFA_IF_NAME_LEN];
   wfaSupplicantName supplicant;
 
-  BYTE programFlag;
   WORD program;
 
   BYTE rtsFlag;
@@ -1157,6 +1176,13 @@ typedef struct ca_sta_preset_parameters {
   BYTE tdlsMode;
 
   BYTE tdlsFlag;
+
+  char ch_pref[6];
+  WORD ch_op_class;
+  WORD ch_pref_num;
+  WORD ch_reason_code;
+  WORD cellular_data_cap;
+  BYTE cellular_data_cap_flag;
 
   BYTE wfdDevTypeFlag;
   BYTE wfdDevType;
@@ -1371,7 +1397,7 @@ typedef struct ca_sta_disconnect {
 
 typedef struct ca_sta_reset_default {
   char intf[WFA_IF_NAME_LEN];
-  char prog[8];
+  BYTE program;
   char type[8];
 } caStaResetDefault_t;
 

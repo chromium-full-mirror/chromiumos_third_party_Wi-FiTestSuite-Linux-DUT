@@ -77,6 +77,33 @@ typeNameStr_t profileStr[] = {
 typeNameStr_t direcStr[] = {{DIRECT_SEND, "send", NULL},
                             {DIRECT_RECV, "receive", NULL}};
 
+enum ProgramType programNameToType(const char* name) {
+  if (strlen(name) == 0) {
+    return PROG_TYPE_NONE;
+  } else if (strcasecmp(name, "PMF") == 0) {
+    return PROG_TYPE_PMF;
+  } else if (strcasecmp(name, "General") == 0) {
+    return PROG_TYPE_GEN;
+  } else if (strcasecmp(name, "TDLS") == 0) {
+    return PROG_TYPE_TDLS;
+  } else if (strcasecmp(name, "VOE") == 0) {
+    return PROG_TYPE_VENT;
+  } else if (strcasecmp(name, "WFD") == 0) {
+    return PROG_TYPE_WFD;
+  } else if (strcasecmp(name, "WFDS") == 0) {
+    return PROG_TYPE_WFDS;
+  } else if (strcasecmp(name, "11N") == 0) {
+    return PROG_TYPE_11N;
+  } else if (strcasecmp(name, "HE") == 0) {
+    return PROG_TYPE_HE;
+  } else if (strcasecmp(name, "MBO") == 0) {
+    return PROG_TYPE_MBO;
+  } else {
+    DPRINT_ERR(WFA_ERR, "Unknown program name: %s", name);
+    return PROG_UNSUPPORTED;
+  }
+}
+
 /*
  *  getParamValueInt(): fetch the parameter value based on the parameter name, 
  *                      and stored in provided place holder after converting to
@@ -3851,7 +3878,35 @@ int xcCmdProcStaDevSendFrame(char* pcmdStr, BYTE* aBuf, int* aLen) {
             loc->baskForPublicIdentifierURI_FQDN = atoi(str);
           }
         }
-      } /* LOC */
+      } else if (strcasecmp(str, "HE") == 0) {
+        heFrame_t* he = &sf->frameType.he;
+        sf->program = PROG_TYPE_HE;
+        for (;;) {
+          str = strtok_r(NULL, ",", &pcmdStr);
+          if (str == NULL || str[0] == '\0')
+            break;
+          if (strcasecmp(str, "framename") == 0) {
+            str = strtok_r(NULL, ",", &pcmdStr);
+            if (strcasecmp(str, "wnm_notify") == 0) {
+              he->eframe = HE_TYPE_WNMNOTIFY;
+            }
+          }
+        }
+      } else if (strcasecmp(str, "MBO") == 0) {
+        mboFrame_t* mbo = &sf->frameType.mbo;
+        sf->program = PROG_TYPE_MBO;
+        for (;;) {
+          str = strtok_r(NULL, ",", &pcmdStr);
+          if (str == NULL || str[0] == '\0')
+            break;
+          if (strcasecmp(str, "framename") == 0) {
+            str = strtok_r(NULL, ",", &pcmdStr);
+            if (strcasecmp(str, "wnm_notify") == 0) {
+              mbo->eframe = MBO_TYPE_WNMNOTIFY;
+            }
+          }
+        }
+      } /* MBO */
     }   /* program  */
   }     /* for loop : each programs*/
 
@@ -3919,6 +3974,8 @@ int xcCmdProcStaPresetTestParameters(char* pcmdStr, BYTE* aBuf, int* aLen) {
         presetTestParams->wirelessMode = eModeNL;  // n+abg
       else if (strcasecmp(str, "11ac") == 0)
         presetTestParams->wirelessMode = eModeAC;
+      else if (strcasecmp(str, "11ax") == 0)
+        presetTestParams->wirelessMode = eModeAX;
 
       presetTestParams->modeFlag = 1;
       printf("\nSetting Mode as %d\n", presetTestParams->wirelessMode);
@@ -4293,22 +4350,8 @@ int xcCmdProcStaPresetTestParameters(char* pcmdStr, BYTE* aBuf, int* aLen) {
       str = strtok_r(NULL, ",", &pcmdStr);
       presetTestParams->oper_chn = atoi(str);
     } else if (strcasecmp(str, "program") == 0) {
-      presetTestParams->programFlag = 1;
       str = strtok_r(NULL, ",", &pcmdStr);
-      if (strcasecmp(str, "PMF") == 0) {
-        presetTestParams->program = PROG_TYPE_PMF;
-      } else if (strcasecmp(str, "General") == 0) {
-        presetTestParams->program = PROG_TYPE_GEN;
-      } else if (strcasecmp(str, "TDLS") == 0) {
-        presetTestParams->program = PROG_TYPE_TDLS;
-      } else if (strcasecmp(str, "VOE") == 0) {
-        presetTestParams->program = PROG_TYPE_VENT;
-      } else if (strcasecmp(str, "WFD") == 0) {
-        presetTestParams->program = PROG_TYPE_WFD;
-      } else if (strcasecmp(str, "WFDS") == 0) {
-        presetTestParams->program = PROG_TYPE_WFDS;
-      }
-
+      presetTestParams->program = programNameToType(str);
     } else if (strcasecmp(str, "CoupledCap") == 0) {
       presetTestParams->wfdCoupledCapFlag = 1;
       str = strtok_r(NULL, ",", &pcmdStr);
@@ -4347,6 +4390,24 @@ int xcCmdProcStaPresetTestParameters(char* pcmdStr, BYTE* aBuf, int* aLen) {
       } else if (strcasecmp(str, "CliGO") == 0) {
         presetTestParams->wfdsConnectionCapability = eWfdsCliGO;
       }
+    } else if (strcasecmp(str, "ch_pref") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      strncpy(presetTestParams->ch_pref, str,
+              sizeof(presetTestParams->ch_pref) - 1);
+      presetTestParams->ch_pref[sizeof(presetTestParams->ch_pref) - 1] = 0;
+    } else if (strcasecmp(str, "ch_op_class") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      presetTestParams->ch_op_class = atoi(str);
+    } else if (strcasecmp(str, "ch_pref_num") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      presetTestParams->ch_pref_num = atoi(str);
+    } else if (strcasecmp(str, "ch_reason_code") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      presetTestParams->ch_reason_code = atoi(str);
+    } else if (strcasecmp(str, "Cellular_Data_Cap") == 0) {
+      str = strtok_r(NULL, ",", &pcmdStr);
+      presetTestParams->cellular_data_cap = atoi(str);
+      presetTestParams->cellular_data_cap_flag = 1;
     }
   }
 
@@ -4379,7 +4440,7 @@ int xcCmdProcStaResetDefault(char* pcmdStr, BYTE* aBuf, int* aLen) {
                0)  // VHT, 11n, VOE; HS2; HS2-R2, NAN, LOC etc
     {
       str = strtok_r(NULL, ",", &pcmdStr);
-      strncpy(reset->prog, str, sizeof(reset->prog) - 1);
+      reset->program = programNameToType(str);
     } else if (strcasecmp(str, "type") == 0)  // dut or sta
     {
       str = strtok_r(NULL, ",", &pcmdStr);

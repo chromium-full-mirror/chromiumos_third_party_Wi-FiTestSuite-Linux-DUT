@@ -77,6 +77,17 @@ dutCmdResponse_t gGenericResp;
 int wfaTGSetPrio(int sockfd, int tgClass);
 void create_apts_msg(int msg, unsigned int txbuf[], int id);
 
+enum ProgramType selectedProgram = PROG_TYPE_NONE;
+
+struct ChannelPrefSet {
+  WORD pref;
+  WORD pref_num;
+  WORD op_class;
+  WORD reason_code;
+  struct ChannelPrefSet* next;
+};
+static struct ChannelPrefSet* channelPrefSet = NULL;
+
 int sret = 0;
 
 extern char e2eResults[];
@@ -129,6 +140,43 @@ bool readLine(const char* filename, char* buf, const int bufSize) {
   return true;
 }
 
+int applyChannelPrefs(const char* ifname,
+                      dutCmdResponse_t* resp,
+                      int* respLen,
+                      BYTE* respBuf) {
+  if (channelPrefSet == NULL) {
+    return WFA_SUCCESS;
+  }
+
+  const char* tmpfile = "/tmp/.applyChannelPrefsTmp";
+  char buf[256] = "";
+
+  struct ChannelPrefSet* set = channelPrefSet;
+  do {
+    snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%d:%d:%d:%d ",
+             set->op_class, set->pref_num, set->pref, set->reason_code);
+    set = set->next;
+  } while (set != NULL);
+
+  sprintf(gCmdStr, "wpa_cli.sh -i %s set non_pref_chan %s > %s", ifname, buf,
+          tmpfile);
+  sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(resp, STATUS_ERROR,
+                         "error running wpa_cli, exit code: %d\n", sret);
+  }
+  // check wpa_cli response
+  if (!readLine(tmpfile, buf, sizeof(buf))) {
+    RETURN_STA_CMD_ERROR(resp, STATUS_ERROR, "unable to read command output\n");
+  }
+
+  if (strcmp(buf, "OK") != 0) {
+    RETURN_STA_CMD_ERROR(resp, STATUS_ERROR,
+                         "set non_pref_chan failed, error: %s\n", buf);
+  }
+
+  return WFA_SUCCESS;
+}
 /*
  * agtCmdProcGetVersion(): response "ca_get_version" command to controller
  *  input:  cmd --- not used
@@ -196,6 +244,13 @@ int wfaStaAssociate(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   if (assoc->cmdsu.assoc.bssid[0] != '\0' || assoc->cmdsu.assoc.wps != 0) {
     RETURN_STA_CMD_ERROR(staAssocResp, STATUS_INVALID,
                          "unsupported command parameter\n");
+  }
+
+  if (selectedProgram == PROG_TYPE_MBO || selectedProgram == PROG_TYPE_HE) {
+    sret = applyChannelPrefs(ifname, staAssocResp, respLen, respBuf);
+    if (sret != WFA_SUCCESS) {
+      return sret;
+    }
   }
 
   if (assoc->cmdsu.assoc.ssid[0] != '\0') {
@@ -2462,6 +2517,30 @@ int wfaStaResetDefault(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
 
 #else
 
+int wfaStaResetDefault(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
+  caStaResetDefault_t* reset = (caStaResetDefault_t*)caCmdBuf;
+  dutCmdResponse_t* ResetResp = &gGenericResp;
+
+  DPRINT_INFO(WFA_OUT, "entering wfaStaResetDefault ...\n");
+
+  selectedProgram = reset->program;
+
+#ifdef IWLWIFI
+  sret = systemWithLog("apply_iwlwifi_options.sh");
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(ResetResp, STATUS_ERROR,
+                         "error running apply_iwlwifi_options, exit code: %d\n",
+                         sret);
+  }
+#endif  // IWLWIFI
+
+  ResetResp->status = STATUS_COMPLETE;
+  wfaEncodeTLV(WFA_STA_RESET_DEFAULT_RESP_TLV, 4, (BYTE*)ResetResp, respBuf);
+  *respLen = WFA_TLV_HDR_LEN + 4;
+
+  return WFA_SUCCESS;
+}
+
 int wfaStaSetRIFS(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   caStaSetRIFS_t* setRifs = (caStaSetRIFS_t*)caCmdBuf;
   dutCmdResponse_t* staSetRIFSResp = &gGenericResp;
@@ -2651,6 +2730,26 @@ int wfaStaDevSendFrame(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
       }
 
     } /*  PROG_TYPE_HS2-R2  */
+    case PROG_TYPE_MBO: {
+      mboFrame_t* mbo = &sf->frameType.mbo;
+      if (mbo->eframe == MBO_TYPE_WNMNOTIFY) {
+        sret = applyChannelPrefs(cmd->intf, devSendResp, respLen, respBuf);
+        if (sret != WFA_SUCCESS) {
+          return sret;
+        }
+      }
+      break;
+    }
+    case PROG_TYPE_HE: {
+      heFrame_t* he = &sf->frameType.he;
+      if (he->eframe == HE_TYPE_WNMNOTIFY) {
+        sret = applyChannelPrefs(cmd->intf, devSendResp, respLen, respBuf);
+        if (sret != WFA_SUCCESS) {
+          return sret;
+        }
+      }
+      break;
+    }
     case PROG_TYPE_GEN: {
       /* General frames */
     }
@@ -3322,18 +3421,104 @@ int wfaStaSetOpportunisticPsReq(int len,
  */
 
 int wfaStaPresetParams(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
-  dutCmdResponse_t infoResp;
+  dutCmdResponse_t* presetParamsResp = &gGenericResp;
+  caStaPresetParameters_t* presetParams = (caStaPresetParameters_t*)caCmdBuf;
+  bool disable11n = false;
+  bool disable11ac = false;
+  bool disable11ax = false;
+  char buf[128];
+  const char* tmpfile = "/tmp/.wfaStaPresetParamsTmp";
 
-  DPRINT_INFO(WFA_WNG, "command sta_preset_testparameters will be ignored\n");
+  DPRINT_INFO(WFA_OUT, "Inside wfaStaPresetParameters function ...\n");
 
-  infoResp.status = STATUS_COMPLETE;
+  if (presetParams->program != PROG_TYPE_NONE) {
+    selectedProgram = presetParams->program;
+  }
 
-  wfaEncodeTLV(WFA_STA_PRESET_PARAMETERS_RESP_TLV, 4, (BYTE*)&infoResp,
-               respBuf);
-  *respLen = WFA_TLV_HDR_LEN + 4;
+  if (presetParams->modeFlag != 0) {
+    switch (presetParams->wirelessMode) {
+      case eModeA:
+      case eModeBG:
+        disable11n = true;
+        disable11ac = true;
+        disable11ax = true;
+        break;
+      case eModeAN:
+      case eModeGN:
+        disable11ac = true;
+        disable11ax = true;
+        break;
+      case eModeAC:
+        disable11ax = true;
+        break;
+      case eModeAX:
+        break;
+      default:
+        RETURN_STA_CMD_ERROR(presetParamsResp, STATUS_INVALID,
+                             "unsupported mode parameter\n");
+    }
+  }
+
+#ifdef IWLWIFI
+  sprintf(
+      gCmdStr,
+      "apply_iwlwifi_options.sh 11n_disable=%d disable_11ac=%d disable_11ax=%d",
+      disable11n, disable11ac, disable11ax);
+  sret = systemWithLog(gCmdStr);
+  if (sret != 0) {
+    RETURN_STA_CMD_ERROR(presetParamsResp, STATUS_ERROR,
+                         "error running apply_iwlwifi_options, exit code: %d\n",
+                         sret);
+  }
+#endif  // IWLWIFI
+
+  if (strcasecmp(presetParams->ch_pref, "clear") == 0) {
+    struct ChannelPrefSet* set = channelPrefSet;
+    while (set != NULL) {
+      struct ChannelPrefSet* next = set->next;
+      free(set);
+      set = next;
+    }
+    channelPrefSet = NULL;
+  } else if (strlen(presetParams->ch_pref) > 0) {
+    struct ChannelPrefSet* set = malloc(sizeof(struct ChannelPrefSet));
+    set->pref = atoi(presetParams->ch_pref);
+    set->pref_num = presetParams->ch_pref_num;
+    set->op_class = presetParams->ch_op_class;
+    set->reason_code = presetParams->ch_reason_code;
+    set->next = channelPrefSet;
+    channelPrefSet = set;
+  }
+
+  if (presetParams->cellular_data_cap_flag) {
+    sprintf(gCmdStr, "wpa_cli.sh -i %s set cellular_data_cap %d > %s",
+            presetParams->intf, presetParams->cellular_data_cap, tmpfile);
+    sret = systemWithLog(gCmdStr);
+    if (sret != 0) {
+      RETURN_STA_CMD_ERROR(presetParamsResp, STATUS_ERROR,
+                           "error running wpa_cli, exit code: %d\n", sret);
+    }
+    // check wpa_cli response
+    if (!readLine(tmpfile, buf, sizeof(buf))) {
+      RETURN_STA_CMD_ERROR(presetParamsResp, STATUS_ERROR,
+                           "unable to read command output\n");
+    }
+
+    if (strcmp(buf, "OK") != 0) {
+      RETURN_STA_CMD_ERROR(presetParamsResp, STATUS_ERROR,
+                           "set cellular_data_cap failed, error: %s\n", buf);
+    }
+  }
+
+  presetParamsResp->status = STATUS_COMPLETE;
+
+  wfaEncodeTLV(WFA_STA_PRESET_PARAMETERS_RESP_TLV, sizeof(dutCmdResponse_t),
+               (BYTE*)presetParamsResp, respBuf);
+  *respLen = WFA_TLV_HDR_LEN + sizeof(dutCmdResponse_t);
 
   return WFA_SUCCESS;
 }
+
 int wfaStaSet11n(int len, BYTE* caCmdBuf, int* respLen, BYTE* respBuf) {
   dutCmdResponse_t infoResp;
   dutCmdResponse_t* v11nParamsResp = &infoResp;

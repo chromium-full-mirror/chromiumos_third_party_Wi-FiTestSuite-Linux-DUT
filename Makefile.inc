@@ -22,6 +22,7 @@ UCC=ucc
 CON=console_src
 WTG=WTGService
 MAKE?=make
+FEATURES=-DIWLWIFI
 
 # This is for WMM-PS
 #for Ext TG
@@ -43,7 +44,7 @@ MAKE?=make
 #CFLAGS = -g -O2 -D_REENTRANT  -DWFA_WMM_PS_EXT -DWFA_WMM_AC -DWFA_PC_CONSOLE -DWFA_STA_TB -Wall -I../inc
 
 # This is for WPA2 as default
-CFLAGS = -g -O2 -D_REENTRANT -Wall -I../inc
+CFLAGS = -g -O2 -D_REENTRANT ${FEATURES} -Wall -I../inc
 
 DUTLIBS = ../lib/libwfa_dut.a -lpthread
 CALIBS = ../lib/libwfa_ca.a -lpthread

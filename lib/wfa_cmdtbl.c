@@ -110,11 +110,7 @@ xcCommandFuncPtr gWfaCmdFuncTbl[WFA_STA_COMMANDS_END] = {
     wfaStaTestBedCmd, /*    WFA_STA_SET_COEXIST_MGMT_TLV               (44)*/
 #endif
     wfaStaSetRIFS, /*    WFA_STA_SET_RIFS_TEST_TLV                     (45)*/
-#ifdef WFA_STA_TB
     wfaStaResetDefault, /*    WFA_STA_RESET_DEFAULT_TLV                (46)*/
-#else
-    wfaStaTestBedCmd, /*    WFA_STA_RESET_DEFAULT_TLV                  (46)*/
-#endif
     wfaStaDisconnect,       /*    WFA_STA_DISCONNECT_TLV             (47)*/
     wfaStaDevSendFrame,     /*    WFA_STA_DEV_SEND_FRAME_TLV              (48)*/
     wfaStaSetSecurity,      /*    WFA_STA_SET_SECURITY_TLV           (49)*/
