@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# Starts wfa_dut on default port.
+
+WFA_LIB=/usr/local/libexe/wfa
+
+echo "shill: giving up managing WiFi devices"
+$WFA_LIB/shill_disable_wifi
+
+echo "Starting wfa_dut on localhost:9999"
+
+# Append $WFA_LIB to $PATH so that wfa_dut can run the scripts in it.
+PATH="$PATH:$WFA_LIB" wfa_dut eth0 9999 &

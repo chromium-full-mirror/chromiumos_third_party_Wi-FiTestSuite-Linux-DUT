@@ -21,7 +21,7 @@ function run_dut {
   ssh -i $IDENTITY -F $SSH_CONFIG $DUT_HOST $@
 }
 
-# Copy source file(s) to $DUT_HOST:$WFA_DIR
-function deploy_dut {
-  scp -i $IDENTITY -F $SSH_CONFIG $@ $DUT_HOST:$WFA_DIR
+# Copy source file(s) to $DUT_HOST:${last_param}
+function deploy {
+  scp -i $IDENTITY -F $SSH_CONFIG ${@:1:$#-1} $DUT_HOST:${!#}
 }

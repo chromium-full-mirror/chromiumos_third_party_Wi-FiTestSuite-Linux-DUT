@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Starts wfa_dut and wfa_ca in sequence.
+
+stop_wfa_ca_dut
+
+start_wfa_dut &
+sleep 1
+start_wfa_ca &
