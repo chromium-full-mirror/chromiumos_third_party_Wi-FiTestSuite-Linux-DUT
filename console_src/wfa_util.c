@@ -407,7 +407,8 @@ is_ipdotformat(char* s) {
   }
   return (d == 3);
 }
-int strvec_sep(s, array, n, sep) char *s, *array[], *sep;
+int strvec_sep(s, array, n, sep)
+char *s, *array[], *sep;
 int n;
 {
   char* p;

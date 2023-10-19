@@ -575,7 +575,7 @@ void* wfa_wmm_thread(void* thr_param) {
   struct timeval lstime, lrtime;
 #ifdef WFA_VOICE_EXT
   int asn = 1; /* everytime it starts from 1, and to ++ */
-#endif /* WFA_VOICE_EXT */
+#endif         /* WFA_VOICE_EXT */
 
   wPT_ATTR_INIT(&tattr);
   wPT_ATTR_SETSCH(&tattr, SCHED_RR);
@@ -851,7 +851,7 @@ void* wfa_wmm_thread(void* thr_param) {
                 break;
               }
             }
-#endif /* WFA_VOICE_EXT */
+#endif      /* WFA_VOICE_EXT */
           } /* while */
 
           if (mySock != -1) {
@@ -1015,7 +1015,7 @@ void* wfa_wmm_thread(void* thr_param) {
                 }
               }
             }
-#endif /* WFA_VOICE_EXT */
+#endif                                            /* WFA_VOICE_EXT */
             wfaSetThreadPrio(myId, TG_WMM_AC_BE); /* put it back down */
           }                                       /* while */
 

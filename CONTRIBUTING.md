@@ -9,7 +9,7 @@ Contributors are members who contribute to the code, testing, bug reporting, doc
 How to become a Contributor:
 Contributors must sign the [Wi-Fi Alliance Contributor Agreement](http://www.wi-fi.org/wi-fi-alliance-contributor-agreement) before contributing work to Wi-Fi Test Suite software.
 
-Contributors must follow the Contribution Standards, sections 2 through 6 of this file. 
+Contributors must follow the Contribution Standards, sections 2 through 6 of this file.
 
 ## 2. Propose a Submission
 

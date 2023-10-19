@@ -33,9 +33,9 @@ unsigned int rmsg[512];   // rx msg buffer
 unsigned int txmsg[512];  // tx msg buffer
 
 struct itimerval waitval_state = {40, 0};
-#define PORT 12345  // port for sending/receiving
-#define MAXRETRY 3  // port for sending/receiving
-#define SLEEP_PERIOD 10  //time to exit itself
+#define PORT 12345          // port for sending/receiving
+#define MAXRETRY 3          // port for sending/receiving
+#define SLEEP_PERIOD 10     //time to exit itself
 #define INTERSTEP_PERIOD 5  //time allowed within steps
 int port = PORT;
 int reset = 0;

@@ -111,9 +111,9 @@ xcCommandFuncPtr gWfaCmdFuncTbl[WFA_STA_COMMANDS_END] = {
 #endif
     wfaStaSetRIFS, /*    WFA_STA_SET_RIFS_TEST_TLV                     (45)*/
     wfaStaResetDefault, /*    WFA_STA_RESET_DEFAULT_TLV                (46)*/
-    wfaStaDisconnect,       /*    WFA_STA_DISCONNECT_TLV             (47)*/
-    wfaStaDevSendFrame,     /*    WFA_STA_DEV_SEND_FRAME_TLV              (48)*/
-    wfaStaSetSecurity,      /*    WFA_STA_SET_SECURITY_TLV           (49)*/
+    wfaStaDisconnect,   /*    WFA_STA_DISCONNECT_TLV             (47)*/
+    wfaStaDevSendFrame, /*    WFA_STA_DEV_SEND_FRAME_TLV              (48)*/
+    wfaStaSetSecurity,  /*    WFA_STA_SET_SECURITY_TLV           (49)*/
     wfaStaGetP2pDevAddress, /*    WFA_STA_GET_P2P_DEV_ADDRESS_TLV    (50)*/
     wfaStaSetP2p,           /*    WFA_STA_SET_P2P_TLV	               (51)*/
     wfaStaP2pConnect,       /*    WFA_STA_P2P_CONNECT_TLV            (52)*/
